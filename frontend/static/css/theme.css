@@ -1,0 +1,225 @@
+/* Shared light/dark theme layer. Pages keep their own layout; this file only
+   remaps common surfaces, controls, tables, and overlays. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:#202328;
+  --surface:#282c33;
+  --surface-2:#30343c;
+  --surface-muted:#30343c;
+  --ink:#d5d9df;
+  --text:#d5d9df;
+  --text-primary:#d5d9df;
+  --text-secondary:#afb6c1;
+  --text-muted:#969eaa;
+  --muted:#afb6c1;
+  --border:#414750;
+  --border-strong:#505762;
+  --border-soft:#363b43;
+  --accent:#8ca9d6;
+  --accent-soft:#303c50;
+  --primary:#6f8fc0;
+  --primary-dark:#5d79a5;
+  --primary-tint:#35445a;
+  --day:#c2a978;
+  --day-tint:#3d3528;
+  --night:#a7a7cd;
+  --night-tint:#373747;
+  --success:#8db99a;
+  --success-tint:#2d3c33;
+  --success-soft:#2c3b32;
+  --warning:#c6ad7a;
+  --warning-soft:#3c3528;
+  --danger:#c79491;
+  --danger-tint:#3d2d2f;
+  --danger-dark:#b58480;
+  --danger-soft:#3c2c2d;
+  --neutral:#aab2bd;
+  --neutral-soft:#353b44;
+  --green:#8db99a;
+  --amber:#c6ad7a;
+  --blue:#8ca9d6;
+  --red:#c79491;
+  --green-tint:#2c3b32;
+  --amber-tint:#3c3528;
+  --blue-tint:#303c50;
+  --red-tint:#3c2c2d;
+  --thn-ink:#d5d9df;
+  --thn-muted:#afb6c1;
+  --thn-border:rgba(180,190,205,.20);
+  --thn-surface:#282c33;
+  background:#202328;
+}
+
+html[data-theme="dark"] body {
+  background:var(--bg) !important;
+  color:var(--text, var(--ink)) !important;
+}
+
+/* User Management was originally a permanently dark screen. Give it the
+   shared light palette too, so its appearance now follows the same setting. */
+html:not([data-theme="dark"]) {
+  color-scheme: light;
+  --um-bg:#f4f6f9;
+  --um-surface:#ffffff;
+  --um-surface-2:#f8fafc;
+  --um-line:rgba(100,116,139,.18);
+  --um-line-strong:rgba(100,116,139,.32);
+  --um-text:#17213a;
+  --um-text-dim:#475569;
+  --um-muted:#64748b;
+  --um-accent:#2563eb;
+  --um-accent-dim:#1d4ed8;
+  --um-accent-soft:rgba(37,99,235,.10);
+  --um-danger:#dc2626;
+  --um-danger-text:#b91c1c;
+  --um-danger-soft:rgba(220,38,38,.08);
+  --um-ok:#16a34a;
+}
+
+html[data-theme="dark"] :is(.main-content,.container,.content,.page-content,.page-body,.dashboard-content) {
+  color:var(--text, var(--ink));
+}
+
+html[data-theme="dark"] :is(.main-content,.container,.content,.page-content,.page-body,.dashboard-content,.um-page) {
+  background:transparent !important;
+}
+
+html[data-theme="dark"] :is(.card,.chart-card,.stat-card,.table-card,.form-card,.filters-card,.table-section,.attendance-table-wrap,.modal-content,.history-modal-content,.edit-modal-content,.swal2-popup,.panel,.box) {
+  background:var(--surface) !important;
+  color:var(--text, var(--ink)) !important;
+  border-color:var(--border) !important;
+}
+
+/* Low-contrast surfaces used by the individual attendance screens. */
+html[data-theme="dark"] :is(
+  .toolbar,.filter-bar,.filters,.filter-group,.search-bar,.pagination,
+  .export-card,.history-export-row,.table-wrap,.table-toolbar,.table-title,
+  .employee-list,.employee-row,.summary-card,.stat-box,.info-card,.empty,
+  .um-toolbar,.um-table-wrap,.um-table-scroll,.um-modal,.um-dialog,
+  .access-card,.lock-btn,.btn-secondary,.btn-ghost,.btn-quiet,.action-btn
+) {
+  background:#282c33 !important;
+  color:var(--text, var(--ink)) !important;
+  border-color:var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .toolbar,.filter-bar,.filters,.filter-group,.search-bar,.pagination,
+  .export-card,.history-export-row,.table-wrap,.table-toolbar,.table-title,
+  .employee-list,.employee-row,.summary-card,.stat-box,.info-card,.empty,
+  .um-toolbar,.um-table-wrap,.um-table-scroll,.um-modal,.um-dialog,
+  .access-card
+) :is(h1,h2,h3,h4,p,span,label,small,td,li) {
+  color:inherit;
+}
+
+html[data-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  background:#24272d !important;
+  color:var(--text, var(--ink)) !important;
+  border-color:#505762 !important;
+}
+
+html[data-theme="dark"] :is(.btn-secondary,.btn-ghost,.btn-quiet,.action-btn,.lock-btn,.page-btn) {
+  background:#353a43 !important;
+  color:#d5d9df !important;
+  border:1px solid #505762 !important;
+}
+html[data-theme="dark"] :is(.btn-secondary,.btn-ghost,.btn-quiet,.action-btn,.lock-btn,.page-btn):hover {
+  background:#414750 !important;
+}
+
+html[data-theme="dark"] :is(input,select,textarea)::placeholder { color:#969eaa !important; }
+html[data-theme="dark"] :is(table,thead,tbody,tr,td,th) { border-color:var(--border) !important; color:var(--text, var(--ink)); }
+html[data-theme="dark"] .main-content :is(.attendance-table,table) thead th { background:#353a43 !important; color:#c8ced7 !important; }
+html[data-theme="dark"] :is(table) tbody tr:nth-child(even) { background:rgba(255,255,255,.025); }
+html[data-theme="dark"] :is(table) tbody tr:hover { background:rgba(140,169,214,.08) !important; }
+html[data-theme="dark"] :is(.header,.topbar,.page-head,.um-head) { border-color:var(--border); }
+html[data-theme="dark"] :is(.modal-overlay,.modal-backdrop) { background:rgba(0,0,0,.62); }
+
+/* Attendance-log report modals have their own zebra-striping and footer
+   rules. Override those light-only rules explicitly so no white bands remain. */
+html[data-theme="dark"] .history-modal-content,
+html[data-theme="dark"] .history-modal-content .modal-header-row,
+html[data-theme="dark"] .history-modal-content .history-modal-footer {
+  background:#282c33 !important;
+  color:#d5d9df !important;
+  border-color:#414750 !important;
+}
+html[data-theme="dark"] :is(.history-export-row,.history-stats-grid) {
+  background:#24272d !important;
+  border-color:#414750 !important;
+}
+html[data-theme="dark"] .history-stat-card {
+  border-color:#48505c !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .history-table-wrap .attendance-table,
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody,
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr,
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr:nth-child(even),
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr:nth-child(odd),
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr td {
+  background:#282c33 !important;
+  color:#d5d9df !important;
+  border-color:#414750 !important;
+}
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr:nth-child(even),
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr:nth-child(even) td {
+  background:#2c3038 !important;
+}
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr:hover,
+html[data-theme="dark"] .history-table-wrap .attendance-table tbody tr:hover td {
+  background:#333943 !important;
+}
+html[data-theme="dark"] .history-table-wrap .attendance-table thead th {
+  background:#353a43 !important;
+  color:#c8ced7 !important;
+  border-color:#505762 !important;
+}
+html[data-theme="dark"] .btn-close-modal {
+  background:#353a43 !important;
+  color:#d5d9df !important;
+  border:1px solid #505762 !important;
+  box-shadow:none !important;
+}
+html[data-theme="dark"] .btn-close-modal:hover { background:#414750 !important; }
+
+/* Employee Directory modal and table footer used page-local light gradients. */
+html[data-theme="dark"] :is(.modal-card,.modal-card .modal-body,.modal-card .modal-actions,.table-foot) {
+  background:#282c33 !important;
+  color:#d5d9df !important;
+  border-color:#414750 !important;
+}
+html[data-theme="dark"] .modal-card .modal-head {
+  background:#30343c !important;
+  color:#d5d9df !important;
+  border-color:#414750 !important;
+}
+html[data-theme="dark"] .modal-card .modal-head :is(h1,h2,h3,p,span) { color:inherit !important; }
+html[data-theme="dark"] .modal-card .modal-close {
+  background:#24272d !important;
+  color:#aeb6c2 !important;
+}
+html[data-theme="dark"] .modal-card .modal-close:hover { background:#3d2d30 !important; color:#d5d9df !important; }
+
+/* Main dashboard diagrams: neutral lines and muted status markers prevent
+   the floor-plan view from becoming a bright focal point in a dark room. */
+html[data-theme="dark"] :is(.line-floor-plan-inner,.all-lines-grid-canvas,.jig-board) { background:#24272d !important; }
+html[data-theme="dark"] :is(.floor-station,.all-lines-grid-station,.jig-end-circle) { border-color:#59616d !important; }
+html[data-theme="dark"] :is(.floor-station-label,.line-dashboard-updated) { color:#b6bdc7 !important; }
+html[data-theme="dark"] :is(.floor-emp-circle,.process-emp-circle) { box-shadow:none !important; filter:saturate(.72) brightness(.88); }
+
+/* Avoid the bright white header and badge glare visible in dense log tables. */
+html[data-theme="dark"] .main-content :is(.stat-pill,.employee-status,.status-present,.status-late,.status-absent,.status-pending,.status-on-leave,.status-no-work,.status-pending-first-approval,.status-pending-hr-approval,.status-approved,.status-declined) {
+  border:1px solid rgba(190,200,215,.18);
+  box-shadow:none;
+}
+
+.sidebar-theme-toggle {
+  width:100%; margin:0 0 10px; padding:9px 12px; border:1px solid rgba(148,163,184,.2);
+  border-radius:7px; background:#131d33; color:var(--sidebar-text-strong); cursor:pointer;
+  font:600 12px/1 Inter,"Segoe UI",sans-serif; letter-spacing:.2px;
+}
+.sidebar-theme-toggle:hover { background:#1a2540; }
+body.sidebar-collapsed .sidebar-theme-toggle { width:42px; margin:0 auto 10px; padding:9px 0; font-size:0; }
+body.sidebar-collapsed .sidebar-theme-toggle::after { content:"☾"; font-size:16px; }

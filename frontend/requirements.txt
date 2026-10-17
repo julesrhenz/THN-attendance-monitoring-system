@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-SocketIO
+openpyxl
+psycopg2-binary
+python-dateutil
+requests

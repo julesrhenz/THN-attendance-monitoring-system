@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>try { if (localStorage.getItem("thn_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch(e){}</script>
+    <title>Attendance Logs</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+:root{
+    /* Color tokens */
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --border: #e5e9f0;
+    --border-strong: #d7dce6;
+
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+
+    --accent: #2563eb;
+    --accent-soft: #eaf1ff;
+
+    --success: #16a34a;
+    --success-soft: #eafbf1;
+    --warning: #d97706;
+    --warning-soft: #fef6e7;
+    --danger: #dc2626;
+    --danger-soft: #fdeeee;
+    --neutral: #64748b;
+    --neutral-soft: #eef2f7;
+
+    /* Spacing scale */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+
+    /* Radius scale */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 18px;
+
+    /* Shadow scale */
+    --shadow-sm: 0 2px 6px rgba(15,23,42,.05);
+    --shadow-md: 0 8px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.04);
+    --shadow-lg: 0 14px 36px rgba(15,23,42,.12), 0 4px 10px rgba(15,23,42,.08);
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Inter","Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;
+}
+
+.page{
+    max-width:1600px;
+    width:96%;
+    margin:32px auto;
+}
+
+/* ============ TOPBAR ============ */
+
+.topbar{
+    background:var(--surface);
+    border-radius:var(--r-lg);
+    padding:var(--sp-6);
+    margin-bottom:var(--sp-6);
+    box-shadow:var(--shadow-md);
+    border:1px solid var(--border);
+}
+
+.topbar h1{
+    margin-bottom:4px;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    color:var(--text-primary);
+}
+
+.topbar-subtitle{
+    font-size:14px;
+    color:var(--text-secondary);
+    margin-bottom:var(--sp-5);
+}
+
+.filters{
+    display:flex;
+    gap:var(--sp-3);
+    flex-wrap:wrap;
+    align-items:center;
+}
+
+.filters select,
+.filters input{
+    height:44px;
+    padding:0 var(--sp-4);
+    border:1px solid var(--border-strong);
+    border-radius:var(--r-sm);
+    background:var(--surface);
+    font-size:14px;
+    color:var(--text-primary);
+    transition:.15s ease;
+}
+
+.filters select{
+    font-weight:600;
+    cursor:pointer;
+}
+
+.filters select:hover,
+.filters input:hover{
+    border-color:#c2c9d6;
+}
+
+.filters select:focus,
+.filters input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(37,99,235,.14);
+}
+
+.filters input{
+    width:320px;
+}
+
+.roster-warning{
+    display:none;
+    margin-top:var(--sp-4);
+    padding:var(--sp-3) var(--sp-4);
+    background:var(--warning-soft);
+    color:#92400e;
+    border:1px solid #fde3b0;
+    border-radius:var(--r-sm);
+    font-size:13px;
+    font-weight:600;
+}
+
+/* ============ EXPORT ROW ============ */
+.export-row{
+    display:flex;
+    gap:var(--sp-4);
+    flex-wrap:wrap;
+    margin-top:var(--sp-4);
+    padding-top:var(--sp-4);
+    border-top:1px solid var(--border);
+}
+
+.export-card{
+    flex:1;
+    min-width:280px;
+    display:flex;
+    gap:var(--sp-3);
+    align-items:flex-start;
+    padding:var(--sp-4);
+    border-radius:var(--r-md);
+    border:1px solid var(--border);
+    background:#fafbfd;
+    transition:.15s ease;
+}
+
+.export-card:hover{
+    border-color:var(--border-strong);
+    box-shadow:var(--shadow-sm);
+}
+
+.export-card-icon{
+    flex-shrink:0;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:17px;
+}
+
+.export-card.export-single .export-card-icon{ background:var(--accent-soft); color:var(--accent); }
+.export-card.export-range .export-card-icon{ background:var(--warning-soft); color:var(--warning); }
+
+.export-card-body{ flex:1; min-width:0; }
+
+.export-card-title{
+    font-size:14px;
+    font-weight:700;
+    color:var(--text-primary);
+    margin-bottom:2px;
+}
+
+.export-card-desc{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:var(--sp-3);
+    line-height:1.4;
+}
+
+.export-card-controls{
+    display:flex;
+    align-items:center;
+    gap:var(--sp-2);
+    flex-wrap:wrap;
+}
+
+.export-card-controls select,
+.export-card-controls input[type="date"]{
+    height:40px;
+    padding:0 var(--sp-3);
+    border:1px solid var(--border-strong);
+    border-radius:var(--r-sm);
+    background:var(--surface);
+    font-size:13px;
+    color:var(--text-primary);
+}
+
+.export-card-controls input[type="date"]{ width:140px; }
+
+.export-card-controls .range-sep{
+    color:var(--text-muted);
+    font-size:12px;
+    font-weight:600;
+}
+
+.export-card-controls button{
+    height:40px;
+    padding:0 16px;
+    border:none;
+    border-radius:var(--r-sm);
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    transition:.15s ease;
+    white-space:nowrap;
+}
+
+.export-card.export-single .export-card-controls button{
+    background:var(--accent);
+    color:#fff;
+    box-shadow:0 3px 8px rgba(37,99,235,.25);
+}
+.export-card.export-single .export-card-controls button:hover{ background:#1d4ed8; }
+
+.export-card.export-range .export-card-controls button{
+    background:var(--warning);
+    color:#fff;
+    box-shadow:0 3px 8px rgba(217,119,6,.25);
+}
+.export-card.export-range .export-card-controls button:hover{ background:#b45f04; }
+
+
+/* ============ TABLE CARD ============ */
+
+.line-card{
+    background:var(--surface);
+    border-radius:var(--r-lg);
+    padding:var(--sp-5);
+    box-shadow:var(--shadow-md);
+    border:1px solid var(--border);
+    overflow-x:auto;
+}
+
+.line-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:var(--sp-4);
+    padding-bottom:var(--sp-4);
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+    gap:var(--sp-3);
+}
+
+.line-header h2{
+    font-size:17px;
+    font-weight:700;
+    color:var(--text-primary);
+}
+
+.line-header-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.stat-pill{
+    background:var(--accent-soft);
+    color:var(--accent);
+    padding:7px 16px;
+    border-radius:30px;
+    font-size:13px;
+    font-weight:700;
+}
+
+.stat-pill-btn{
+    border:none;
+    cursor:pointer;
+    background:var(--warning-soft);
+    color:var(--warning);
+    transition:.15s ease;
+}
+
+.stat-pill-btn:hover{
+    filter:brightness(0.96);
+}
+
+.stat-pill-btn.accent-pill{
+    background:var(--accent-soft);
+    color:var(--accent);
+}
+
+/* ============ STATUS BADGES ============ */
+
+.employee-status{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:84px;
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+}
+
+.status-present{ background:var(--success-soft); color:var(--success); }
+.status-late{ background:var(--warning-soft); color:var(--warning); }
+.status-absent{ background:var(--danger-soft); color:var(--danger); }
+.status-pending{ background:var(--accent-soft); color:var(--accent); }
+.status-on-leave{ background:var(--neutral-soft); color:var(--neutral); }
+/* "No Work" (e.g. declared off day, suspension) — deliberately styled
+   the same neutral gray as "On Leave" rather than danger/warning, since
+   neither is the employee's fault and neither should read as an
+   attendance problem in the table. */
+.status-no-work{ background:var(--neutral-soft); color:var(--neutral); }
+.status-pending-first-approval{ background:var(--warning-soft); color:var(--warning); }
+.status-pending-hr-approval{ background:var(--warning-soft); color:var(--warning); }
+.status-approved{ background:var(--success-soft); color:var(--success); }
+.status-declined{ background:var(--danger-soft); color:var(--danger); }
+
+/* ============ MODALS ============ */
+/* Shared backdrop + card foundation for every modal on this page (Edit
+   Attendance, History, Missing Punches, First Approval, HR Final
+   Approval). Individual modals extend this with .history-modal-content
+   or .edit-modal-content for size/layout, but the entrance motion,
+   icon-badge header pattern, and focus/scroll treatment are shared so
+   the whole set feels like one designed system rather than five
+   one-off popups. */
+
+@keyframes modalBackdropIn{
+    from{ opacity:0; }
+    to{ opacity:1; }
+}
+
+@keyframes modalContentIn{
+    from{ opacity:0; transform:translateY(10px) scale(.98); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.55);
+    backdrop-filter:blur(3px);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+    padding:20px;
+    animation:modalBackdropIn .18s ease;
+}
+
+.modal-content{
+    width:520px;
+    max-width:100%;
+    background:var(--surface);
+    border-radius:var(--r-lg);
+    padding:var(--sp-5);
+    box-shadow:var(--shadow-lg);
+    border:1px solid var(--border);
+    animation:modalContentIn .22s cubic-bezier(.22,1,.36,1);
+}
+
+@media (prefers-reduced-motion: reduce){
+    .modal, .modal-content{ animation:none; }
+}
+
+.modal-content h2{
+    margin-bottom:var(--sp-4);
+    font-size:18px;
+    font-weight:700;
+}
+
+/* Icon-badge header row, reused by every modal: a small colored circle
+   icon + stacked title/subtitle on the left, close (×) button on the
+   right. Encodes what kind of modal this is at a glance (blue = edit,
+   amber = pending action, etc.) using the same status-color language
+   already established by the stat pills and status badges elsewhere
+   on the page. */
+.modal-header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:var(--sp-3);
+    margin-bottom:var(--sp-5);
+    padding-bottom:var(--sp-4);
+    border-bottom:1px solid var(--border);
+}
+
+.modal-header-text{
+    display:flex;
+    align-items:flex-start;
+    gap:var(--sp-3);
+}
+
+.modal-icon-badge{
+    flex-shrink:0;
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    line-height:1;
+}
+
+.icon-badge-accent{ background:var(--accent-soft); color:var(--accent); }
+.icon-badge-warning{ background:var(--warning-soft); color:var(--warning); }
+.icon-badge-success{ background:var(--success-soft); color:var(--success); }
+
+.modal-header-text h2{
+    margin-bottom:2px;
+    font-size:18px;
+    font-weight:800;
+    color:var(--text-primary);
+}
+
+.modal-header-subtitle{
+    font-size:13px;
+    color:var(--text-muted);
+    font-weight:500;
+}
+
+.modal-close-x{
+    flex-shrink:0;
+    border:none;
+    background:transparent;
+    font-size:20px;
+    line-height:1;
+    color:var(--text-muted);
+    cursor:pointer;
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:var(--r-sm);
+    transition:.15s ease;
+}
+
+.modal-close-x:hover{
+    background:#f1f5f9;
+    color:var(--text-primary);
+}
+
+.modal-close-x:focus-visible,
+.page-btn:focus-visible,
+.btn-close-modal:focus-visible,
+.request-action-btn:focus-visible,
+#saveAttendance:focus-visible,
+#closeModal:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+}
+
+.modal-body{
+    display:flex;
+    flex-direction:column;
+    gap:var(--sp-3);
+}
+
+.modal-content label{
+    display:flex;
+    flex-direction:column;
+    font-weight:600;
+    font-size:13px;
+    color:var(--text-secondary);
+}
+
+.field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:var(--sp-3);
+}
+
+.form-section-label{
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--text-muted);
+    margin-top:var(--sp-1);
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea{
+    margin-top:6px;
+    padding:10px 12px;
+    border:1px solid var(--border-strong);
+    border-radius:var(--r-sm);
+    background:#fbfcfe;
+    font-size:14px;
+    color:var(--text-primary);
+    font-family:inherit;
+    resize:vertical;
+    transition:.15s ease;
+}
+
+.modal-content input:disabled{
+    background:#f1f5f9;
+    color:var(--text-secondary);
+    cursor:not-allowed;
+}
+
+.modal-content input:hover:not(:disabled),
+.modal-content select:hover,
+.modal-content textarea:hover{
+    border-color:#c2c9d6;
+}
+
+.modal-content input:focus,
+.modal-content select:focus,
+.modal-content textarea:focus{
+    outline:none;
+    border-color:var(--accent);
+    background:var(--surface);
+    box-shadow:0 0 0 3px rgba(37,99,235,.14);
+}
+
+.modal-buttons{
+    display:flex;
+    justify-content:flex-end;
+    gap:var(--sp-2);
+    margin-top:var(--sp-5);
+    padding-top:var(--sp-4);
+    border-top:1px solid var(--border);
+}
+
+.modal-buttons button{
+    border:none;
+    padding:11px 20px;
+    border-radius:var(--r-sm);
+    cursor:pointer;
+    font-weight:700;
+    font-size:13px;
+    transition:.15s ease;
+}
+
+#saveAttendance{
+    background:var(--accent);
+    color:#fff;
+    box-shadow:0 4px 12px rgba(37,99,235,.25);
+}
+#saveAttendance:hover{ background:#1d4ed8; box-shadow:0 6px 16px rgba(37,99,235,.32); }
+
+#closeModal{
+    background:var(--surface);
+    color:var(--text-secondary);
+    border:1px solid var(--border-strong) !important;
+}
+#closeModal:hover{ background:#f1f5f9; color:var(--text-primary); }
+
+/* ============ ATTENDANCE TABLE ============ */
+
+.attendance-table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
+
+.attendance-table thead{
+    background:#f8fafc;
+}
+
+.attendance-table th{
+    padding:14px 16px;
+    text-align:left;
+    font-size:11px;
+    font-weight:700;
+    color:var(--text-secondary);
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    border-bottom:1px solid var(--border);
+}
+
+.attendance-table th[data-sort]{
+    cursor:pointer;
+    user-select:none;
+    transition:.15s ease;
+}
+
+.attendance-table th[data-sort]:hover{
+    color:var(--accent);
+}
+
+.sort-arrow{
+    display:inline-block;
+    margin-left:4px;
+    font-size:10px;
+    color:var(--text-muted);
+}
+
+.attendance-table td{
+    padding:14px 16px;
+    font-size:14px;
+    color:#334155;
+    border-bottom:1px solid var(--border);
+    vertical-align:middle;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-transform:uppercase;
+}
+
+.attendance-table tbody tr{
+    cursor:pointer;
+    transition:.15s ease;
+}
+
+.attendance-table tbody tr:hover{
+    background:#f8fbff;
+}
+
+/* Main employee table: ID / Name / Position / Gender / Shift / Time In / Status */
+.attendance-table th:nth-child(1), .attendance-table td:nth-child(1){ width:10%; }
+.attendance-table th:nth-child(2), .attendance-table td:nth-child(2){ width:20%; }
+.attendance-table th:nth-child(3), .attendance-table td:nth-child(3){ width:14%; }
+.attendance-table th:nth-child(4), .attendance-table td:nth-child(4){ width:8%; }
+.attendance-table th:nth-child(5), .attendance-table td:nth-child(5){ width:10%; }
+.attendance-table th:nth-child(6), .attendance-table td:nth-child(6){ width:10%; }
+.attendance-table th:nth-child(7), .attendance-table td:nth-child(7){ width:28%; }
+
+/* The status column packs a badge + optional "(no log)" note + two action
+   buttons. That's more content than a fixed-width nowrap cell can hold on
+   absent/no-log rows (the extra "(no log)" text is what pushes it over),
+   so this column gets its own rule that wraps instead of clipping —
+   otherwise the Request Time-In button silently gets cut off by the
+   shared td's overflow:hidden/ellipsis/nowrap. */
+.attendance-table td:nth-child(7){
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+}
+
+.status-cell-actions{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    row-gap:4px;
+    width:100%;              /* add this — lets the flex row use the full cell width */
+    justify-content:space-between; /* add this — badge/note group on left, button on right */
+}
+
+/* Employee name cell with avatar initials */
+.employee-name-cell{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.employee-avatar{
+    flex-shrink:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:12px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.employee-name-link{
+    color:var(--text-primary);
+    font-weight:600;
+}
+
+.employee-name-cell:hover .employee-name-link{
+    color:var(--accent);
+    text-decoration:underline;
+}
+
+.table-empty-state{
+    text-align:center;
+    padding:48px 20px;
+    color:var(--text-muted);
+    text-transform:none;
+}
+
+.table-empty-state .empty-icon{
+    font-size:32px;
+    margin-bottom:8px;
+    opacity:.5;
+}
+
+.table-empty-state .empty-title{
+    font-weight:700;
+    color:var(--text-secondary);
+    margin-bottom:4px;
+}
+
+/* Pagination buttons shared style */
+.page-btn{
+    padding:9px 16px;
+    border-radius:var(--r-sm);
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-primary);
+    transition:.15s ease;
+}
+
+.page-btn:hover:not(:disabled){
+    background:#f1f5f9;
+    border-color:#c2c9d6;
+}
+
+.page-btn:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+}
+
+.page-info{
+    font-size:13px;
+    color:var(--text-muted);
+    font-weight:600;
+}
+
+/* ============ HISTORY / REPORT MODAL (simplified) ============ */
+
+.history-modal-content{
+    width:840px;
+    max-width:92vw;
+    max-height:85vh;
+    display:flex;
+    flex-direction:column;
+    padding:0;
+    overflow:hidden;
+    border-radius:var(--r-lg);
+}
+
+.history-modal-content .modal-header-row{
+    padding:var(--sp-5) var(--sp-5) var(--sp-4);
+    margin-bottom:0;
+}
+
+.history-modal-subtitle{
+    margin-top:4px;
+    font-size:13px;
+    color:var(--text-muted);
+    font-weight:500;
+}
+
+/* Per-employee date-range export row, inside the History modal — lets
+   the user pull just this employee's records for an arbitrary range
+   (e.g. Aug 1–17) without leaving the modal. Filters historyRecordsAll
+   client-side since the employee's full history is already loaded. */
+.history-export-row{
+    display:flex;
+    align-items:center;
+    gap:var(--sp-2);
+    flex-wrap:wrap;
+    padding:var(--sp-3) var(--sp-5);
+    background:#fafbfd;
+    border-bottom:1px solid var(--border);
+}
+
+.history-export-row input[type="date"]{
+    height:38px;
+    padding:0 var(--sp-3);
+    width:150px;
+    border:1px solid var(--border-strong);
+    border-radius:var(--r-sm);
+    background:var(--surface);
+    font-size:13px;
+    color:var(--text-primary);
+}
+
+.history-export-row input[type="date"]:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(37,99,235,.14);
+}
+
+/* Simple 4-up summary strip: Total / Present / Late / Absent */
+.history-stats-grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:var(--sp-3);
+    padding:var(--sp-4) var(--sp-5);
+    background:#fafbfd;
+    border-bottom:1px solid var(--border);
+}
+
+.history-stat-card{
+    text-align:center;
+    padding:var(--sp-3) var(--sp-2);
+    border-radius:var(--r-sm);
+    background:var(--surface);
+    border:1px solid var(--border);
+}
+
+.history-stat-card .stat-label{
+    display:block;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--text-muted);
+    margin-bottom:4px;
+}
+
+.history-stat-card .stat-value{
+    font-size:22px;
+    font-weight:800;
+    color:var(--text-primary);
+}
+
+.history-stat-card.total{ background:var(--accent-soft); border-color:transparent; }
+.history-stat-card.total .stat-label{ color:var(--accent); }
+.history-stat-card.total .stat-value{ color:var(--accent); }
+
+.history-stat-card.present{ background:var(--success-soft); border-color:transparent; }
+.history-stat-card.present .stat-label{ color:var(--success); }
+.history-stat-card.present .stat-value{ color:var(--success); }
+
+.history-stat-card.late{ background:var(--warning-soft); border-color:transparent; }
+.history-stat-card.late .stat-label{ color:var(--warning); }
+.history-stat-card.late .stat-value{ color:var(--warning); }
+
+.history-stat-card.absences{ background:var(--danger-soft); border-color:transparent; }
+.history-stat-card.absences .stat-label{ color:var(--danger); }
+.history-stat-card.absences .stat-value{ color:var(--danger); }
+
+.history-stat-card.missing-in .stat-value,
+.history-stat-card.missing-out .stat-value{ color:var(--warning); }
+
+.history-table-wrap{
+    padding:var(--sp-4) var(--sp-5) 0;
+    overflow-y:auto;
+    flex:1;
+    scrollbar-width:thin;
+}
+
+.history-table-wrap::-webkit-scrollbar{ width:8px; }
+.history-table-wrap::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
+.history-table-wrap::-webkit-scrollbar-track{ background:transparent; }
+
+.history-table-wrap .attendance-table{
+    border:1px solid var(--border);
+    border-radius:var(--r-sm);
+    overflow:hidden;
+}
+
+.history-table-wrap .attendance-table th{
+    position:sticky;
+    top:0;
+    background:#f8fafc;
+    z-index:1;
+}
+
+.history-table-wrap .attendance-table tbody tr:nth-child(even){
+    background:#fafbfd;
+}
+
+.history-table-wrap .attendance-table tbody tr:nth-child(even):hover{
+    background:#f8fbff;
+}
+
+/* History table has different columns than the main table, so it needs
+   its own widths — the shared .attendance-table rule was sizing "Date"
+   the same as "Employee ID" (15%) and squeezing it with ellipsis. */
+.history-table-wrap .attendance-table th:nth-child(1),
+.history-table-wrap .attendance-table td:nth-child(1){ width:26%; }
+.history-table-wrap .attendance-table th:nth-child(2),
+.history-table-wrap .attendance-table td:nth-child(2){ width:22%; }
+.history-table-wrap .attendance-table th:nth-child(3),
+.history-table-wrap .attendance-table td:nth-child(3){ width:17%; }
+.history-table-wrap .attendance-table th:nth-child(4),
+.history-table-wrap .attendance-table td:nth-child(4){ width:17%; }
+.history-table-wrap .attendance-table th:nth-child(5),
+.history-table-wrap .attendance-table td:nth-child(5){ width:18%; }
+
+/* Missing-punches report table: 5 columns, no status column needed
+   beyond the Time In / Time Out cells themselves. */
+.missing-punches-table-wrap .attendance-table th:nth-child(1),
+.missing-punches-table-wrap .attendance-table td:nth-child(1){ width:18%; }
+.missing-punches-table-wrap .attendance-table th:nth-child(2),
+.missing-punches-table-wrap .attendance-table td:nth-child(2){ width:32%; }
+.missing-punches-table-wrap .attendance-table th:nth-child(3),
+.missing-punches-table-wrap .attendance-table td:nth-child(3){ width:20%; }
+.missing-punches-table-wrap .attendance-table th:nth-child(4),
+.missing-punches-table-wrap .attendance-table td:nth-child(4){ width:15%; }
+.missing-punches-table-wrap .attendance-table th:nth-child(5),
+.missing-punches-table-wrap .attendance-table td:nth-child(5){ width:15%; }
+
+#pendingRequestsModal .history-modal-content,
+#firstApprovalModal .history-modal-content{
+    width:1240px;
+    max-width:96vw;
+}
+
+.pending-requests-table-wrap .attendance-table td{
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    text-transform:none;
+    vertical-align:top;
+}
+/* Cell spacing + wrapping for the two approval tables (desktop only,
+   so the mobile stacked-card layout keeps its own padding) */
+@media (min-width:641px){
+    .pending-requests-table-wrap .attendance-table th,
+    .pending-requests-table-wrap .attendance-table td{
+        padding:12px 10px;
+        overflow-wrap:break-word;
+    }
+}
+
+/* First Approval table — 8 columns */
+.pending-requests-table-wrap .attendance-table th:nth-child(1),
+.pending-requests-table-wrap .attendance-table td:nth-child(1){ width:14%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(2),
+.pending-requests-table-wrap .attendance-table td:nth-child(2){ width:14%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(3),
+.pending-requests-table-wrap .attendance-table td:nth-child(3){ width:9%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(4),
+.pending-requests-table-wrap .attendance-table td:nth-child(4){ width:17%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(5),
+.pending-requests-table-wrap .attendance-table td:nth-child(5){ width:10%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(6),
+.pending-requests-table-wrap .attendance-table td:nth-child(6){ width:9%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(7),
+.pending-requests-table-wrap .attendance-table td:nth-child(7){ width:10%; }
+.pending-requests-table-wrap .attendance-table th:nth-child(8),
+.pending-requests-table-wrap .attendance-table td:nth-child(8){ width:17%; }
+
+/* HR (final) approval table — 9 columns */
+.hr-requests-table-wrap .attendance-table th:nth-child(1),
+.hr-requests-table-wrap .attendance-table td:nth-child(1){ width:13%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(2),
+.hr-requests-table-wrap .attendance-table td:nth-child(2){ width:13%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(3),
+.hr-requests-table-wrap .attendance-table td:nth-child(3){ width:9%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(4),
+.hr-requests-table-wrap .attendance-table td:nth-child(4){ width:14%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(5),
+.hr-requests-table-wrap .attendance-table td:nth-child(5){ width:8%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(6),
+.hr-requests-table-wrap .attendance-table td:nth-child(6){ width:9%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(7),
+.hr-requests-table-wrap .attendance-table td:nth-child(7){ width:8%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(8),
+.hr-requests-table-wrap .attendance-table td:nth-child(8){ width:8%; }
+.hr-requests-table-wrap .attendance-table th:nth-child(9),
+.hr-requests-table-wrap .attendance-table td:nth-child(9){ width:18%; }
+
+.request-actions-cell{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+/* Minimal outline buttons */
+.request-action-btn{
+    border:1px solid var(--border-strong);
+    background:transparent;
+    padding:6px 12px;
+    min-width:72px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:12px;
+    text-transform:none;
+    letter-spacing:0;
+    box-shadow:none;
+    text-align:center;
+    transition:background .15s ease, border-color .15s ease, color .15s ease;
+}
+.request-approve-btn{ color:var(--success); border-color:var(--success); }
+.request-approve-btn:hover{ background:rgba(22,163,74,.10); }
+
+.request-decline-btn{ color:var(--danger); border-color:var(--danger); }
+.request-decline-btn:hover{ background:rgba(220,38,38,.10); }
+
+.request-action-btn:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    background:transparent;
+}
+
+/* Bulk bar: keep the two buttons side by side and full width on phones */
+@media (max-width:640px){
+    .hr-bulk-actions{ margin-left:0; width:100%; }
+    .hr-bulk-actions .request-action-btn{ flex:1; }
+}
+.hr-bulk-bar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    padding:10px 16px;
+    margin:0 0 8px;
+    background:var(--accent-soft);
+    border:1px solid var(--border);
+    border-radius:10px;
+}
+.hr-bulk-selectall{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:700;
+    font-size:13px;
+    color:var(--text-primary);
+    cursor:pointer;
+}
+.hr-bulk-count{ font-size:13px; color:var(--text-secondary); }
+.hr-bulk-actions{ margin-left:auto; display:flex; gap:8px; }
+.hr-bulk-bar .request-action-btn:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    transform:none;
+    box-shadow:none;
+}
+.hr-row-check{ display:flex; align-items:flex-start; gap:8px; cursor:pointer; }
+.hr-row-check input{ margin-top:3px; width:16px; height:16px; cursor:pointer; flex-shrink:0; }
+
+.history-date-cell{
+    font-weight:700;
+    color:var(--text-primary);
+    letter-spacing:.2px;
+}
+
+.punch-missing{
+    color:var(--warning);
+    font-weight:700;
+}
+
+.history-modal-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:var(--sp-4) var(--sp-5) var(--sp-5);
+    border-top:1px solid var(--border);
+    background:#fafbfd;
+}
+
+.history-pagination{
+    display:flex;
+    align-items:center;
+    gap:var(--sp-3);
+}
+
+.btn-close-modal{
+    background:var(--text-primary);
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:var(--r-sm);
+    cursor:pointer;
+    font-weight:600;
+    font-size:13px;
+    transition:.15s ease;
+}
+
+.btn-close-modal:hover{
+    background:#1e293b;
+}
+
+/* ============ NOTIFICATIONS ============ */
+/* Requester-facing feed (e.g. "Time-in Request Approved"). Reuses the
+   same history-modal-content shell as the other report modals, but the
+   body is a stacked card list instead of a table since each entry has
+   variable-length text rather than fixed columns. */
+
+.notifications-list-wrap{
+    padding:var(--sp-4) var(--sp-5);
+    overflow-y:auto;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:var(--sp-2);
+    scrollbar-width:thin;
+}
+
+.notifications-list-wrap::-webkit-scrollbar{ width:8px; }
+.notifications-list-wrap::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
+.notifications-list-wrap::-webkit-scrollbar-track{ background:transparent; }
+
+.notification-item{
+    display:flex;
+    align-items:flex-start;
+    gap:var(--sp-3);
+    padding:var(--sp-3) var(--sp-4);
+    border-radius:var(--r-sm);
+    border:1px solid var(--border);
+    background:var(--surface);
+    cursor:pointer;
+    transition:.15s ease;
+}
+
+.notification-item:hover{
+    border-color:#c2c9d6;
+    background:#f8fbff;
+}
+
+/* Unread items get the same soft-success tint used for "Approved"
+   status badges elsewhere on the page, so the color language stays
+   consistent — clicking clears it back to the neutral surface state. */
+.notification-item.notification-unread{
+    background:var(--success-soft);
+    border-color:transparent;
+}
+
+.notification-icon{
+    flex-shrink:0;
+    font-size:18px;
+    line-height:1.4;
+}
+
+.notification-content{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+}
+
+.notification-title{
+    font-weight:700;
+    font-size:13px;
+    color:var(--text-primary);
+}
+
+.notification-body{
+    font-size:13px;
+    color:var(--text-secondary);
+    white-space:normal;
+}
+
+.notification-timestamp{
+    font-size:11px;
+    color:var(--text-muted);
+    margin-top:2px;
+}
+
+/* ============ RESPONSIVE ============ */
+
+@media(max-width:768px){
+    .export-row{ flex-direction:column; align-items:stretch; }
+    .export-card-controls{ width:100%; }
+    .export-card-controls select,
+    .export-card-controls input[type="date"]{ flex:1; min-width:100px; }
+    .export-card-controls button{ width:100%; }
+    .filters input{ width:100%; }
+    .line-header{ flex-direction:column; align-items:flex-start; gap:var(--sp-3); }
+    .history-stats-grid{ grid-template-columns:repeat(3,1fr); }
+    .field-row{ grid-template-columns:1fr; }
+    .modal{ padding:12px; }
+    .export-row{ flex-direction:column; align-items:stretch; }
+    .export-group{ width:100%; }
+    .export-row input[type="date"]{ width:100%; flex:1; }
+    .history-export-row{ flex-direction:column; align-items:stretch; }
+    .history-export-row input[type="date"]{ width:100%; }
+}
+/* ============ MOBILE RESPONSIVE TABLES ============ */
+@media (max-width: 640px){
+    .modal{ padding:0; align-items:flex-end; }
+
+    .modal-content,
+    .history-modal-content,
+    #pendingRequestsModal .history-modal-content,
+    #firstApprovalModal .history-modal-content{
+        width:100%;
+        max-width:100%;
+        max-height:94vh;
+        border-radius:18px 18px 0 0;
+    }
+
+    .modal-header-row{ padding:var(--sp-4); }
+    .history-table-wrap, .notifications-list-wrap{ padding:var(--sp-3) var(--sp-4) 0; }
+    .history-modal-footer{ padding:var(--sp-3) var(--sp-4) var(--sp-4); flex-wrap:wrap; gap:10px; }
+
+    /* Turn every attendance-table into stacked cards */
+    .attendance-table thead{ display:none; }
+    .attendance-table, .attendance-table tbody, .attendance-table tr, .attendance-table td{
+        display:block;
+        width:100% !important;
+    }
+    .attendance-table tr{
+        border:1px solid var(--border);
+        border-radius:var(--r-md);
+        margin-bottom:12px;
+        padding:10px 12px;
+        background:var(--surface);
+    }
+    .attendance-table tbody tr:hover{ background:var(--surface); }
+    .attendance-table td{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        border-bottom:1px dashed var(--border);
+        padding:8px 0;
+        white-space:normal;
+        text-transform:none;
+        overflow:visible;
+        text-overflow:clip;
+    }
+    .attendance-table td:last-child{ border-bottom:none; }
+    .attendance-table td::before{
+        content:attr(data-label);
+        font-weight:700;
+        font-size:11px;
+        text-transform:uppercase;
+        letter-spacing:.4px;
+        color:var(--text-muted);
+        flex-shrink:0;
+    }
+    .attendance-table td:not([data-label])::before{ content:none; }
+
+    /* Action / status cells: let content take full width under its own row */
+    .attendance-table td.cell-actions{
+        flex-direction:column;
+        align-items:stretch;
+    }
+    .attendance-table td.cell-actions::before{ margin-bottom:4px; }
+
+    .request-actions-cell{ width:100%; }
+    .request-action-btn{ flex:1; min-width:0; }
+
+    .status-cell-actions{ justify-content:space-between; width:100%; }
+
+    .history-stats-grid{ grid-template-columns:repeat(2,1fr); }
+    #pendingRequestsModal .history-modal-content,
+    #firstApprovalModal .history-modal-content{ width:100%; }
+}
+/* ============ EDIT ATTENDANCE MODAL — SMALL SCREEN FIX ============
+   Header at buttons naka-fix, yung form body lang ang nag-i-scroll,
+   para laging kita yung Submit button kahit maliit ang screen/height. */
+#editModal .edit-modal-content{
+    display:flex;
+    flex-direction:column;
+    max-height:calc(100vh - 40px);
+    max-height:calc(100dvh - 40px);
+    overflow:hidden;
+}
+
+#editModal .modal-header-row{
+    flex-shrink:0;
+}
+
+#editModal .modal-body{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding-right:4px;
+}
+
+#editModal .modal-buttons{
+    flex-shrink:0;
+    background:var(--surface);
+}
+
+/* Maikli ang screen (laptop na maliit, landscape phone) */
+@media (max-height:640px){
+    #editModal .modal-buttons{
+        margin-top:var(--sp-3);
+        padding-top:var(--sp-3);
+    }
+    #editModal .modal-buttons button{ padding:9px 16px; }
+}
+
+/* Phone: bottom sheet, full-width na buttons */
+@media (max-width:640px){
+    #editModal .edit-modal-content{
+        max-height:94vh;
+        max-height:94dvh;
+    }
+    #editModal .modal-buttons{
+        flex-direction:column-reverse;
+        padding-bottom:max(var(--sp-2), env(safe-area-inset-bottom));
+    }
+    #editModal .modal-buttons button{
+        width:100%;
+    }
+}
+    /* ===== Edit Attendance: friendly time pickers ===== */
+.edit-info{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 24px;
+    padding:10px 14px;
+    background:var(--accent-soft);
+    border:1px solid var(--border);
+    border-radius:var(--r-sm);
+}
+.edit-info div{ display:flex; flex-direction:column; gap:2px; font-size:12px; color:var(--text-muted); }
+.edit-info strong{ font-size:14px; font-weight:700; color:var(--text-primary); }
+
+.edit-time-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-top:var(--sp-1);
+}
+.edit-time-head .form-section-label{ margin-top:0; }
+
+.edit-fill-btn{
+    border:1px solid var(--border-strong);
+    background:transparent;
+    color:var(--accent);
+    padding:5px 10px;
+    border-radius:6px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+}
+.edit-fill-btn:hover{ background:var(--accent-soft); }
+
+.time-picker{ display:flex; align-items:center; gap:8px; }
+.time-picker select{ flex:1; min-width:0; font-size:16px; padding:10px; }
+.time-colon{ font-weight:700; color:var(--text-muted); }
+
+.edit-preview{
+    min-height:22px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--text-primary);
+}
+.edit-preview.is-empty{ color:var(--text-muted); font-weight:500; }
+.edit-preview.is-error{ color:var(--danger); }
+
+.edit-badge{ padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+.edit-badge.ok{   background:rgba(22,163,74,.12); color:var(--success); }
+.edit-badge.late{ background:rgba(220,38,38,.12); color:var(--danger); }
+</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="{{ url_for('static', filename='js/attendance_logs.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ui-refresh.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=7">
+<script defer src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
+</head>
+
+<body>
+{% include 'sidebar.html' %}
+<div class="main-content">
+    <div class="page">
+
+            <!-- TOPBAR -->
+            <header class="topbar">
+                <h1>Attendance Monitoring</h1>
+                <p class="topbar-subtitle">Live view of today's shift attendance across all lines</p>
+
+                <div class="filters">
+                <select id="shiftFilter">
+                    <option value="" selected>All Shifts</option>
+                    <option value="Day Shift">Day Shift</option>
+                    <option value="Night Shift">Night Shift</option>
+                </select>
+
+                    <input id="dateFilter" type="date" aria-label="Attendance date">
+
+                    <select id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="Present">Present</option>
+                        <option value="Late">Late</option>
+                        <option value="Absent">Absent</option>
+                        <option value="On Leave">On Leave</option>
+                        <option value="No Work">No Work</option>
+                    </select>
+
+                    <select id="positionFilter">
+                        <option value="">All Positions</option>
+                    </select>
+
+                    <input id="globalSearch" type="text" placeholder="Search Employee ID or Name">
+                </div>
+
+                <!-- EXPORT ROW: single-date export (existing) + new date-range
+                     export. Both share the Export Status dropdown so filtering
+                     by status applies whichever export button is clicked. -->
+        <div class="export-row">
+            <div class="export-card export-single">
+                <div class="export-card-icon">📅</div>
+                <div class="export-card-body">
+                    <div class="export-card-title">Export Selected Date</div>
+                    <div class="export-card-desc">Export attendance for the date set in the filter above.</div>
+                    <div class="export-card-controls">
+                        <select id="exportStatusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="Present">Present</option>
+                            <option value="Late">Late</option>
+                            <option value="Absent">Absent</option>
+                            <option value="On Leave">On Leave</option>
+                            <option value="No Work">No Work</option>
+                        </select>
+                        <button id="exportExcelBtn" type="button">⬇ Export</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-card export-range">
+                <div class="export-card-icon">🗓️</div>
+                <div class="export-card-body">
+                    <div class="export-card-title">Export Date Range</div>
+                    <div class="export-card-desc">Use this when you need multiple days, e.g. a payroll period or weekly report.</div>
+                    <div class="export-card-controls">
+                        <input id="rangeStartDate" type="date" aria-label="Export range start date">
+                        <span class="range-sep">to</span>
+                        <input id="rangeEndDate" type="date" aria-label="Export range end date">
+                        <button id="exportRangeBtn" type="button">⬇ Export</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                <div id="rosterWarning" class="roster-warning"></div>
+            </header>
+            <!-- EMPLOYEE TABLE -->
+            <section class="line-card">
+                <div class="line-header">
+                    <h2>Employees</h2>
+                    <div class="line-header-actions">
+                        <button id="notificationsBtn" type="button" class="stat-pill stat-pill-btn accent-pill">
+                            🔔 Notifications: <span id="notificationsCount">0</span>
+                        </button>
+                        <button id="firstApprovalBtn" type="button" class="stat-pill stat-pill-btn">
+                            1️⃣ Pending First Approval: <span id="firstApprovalCount">0</span>
+                        </button>
+                        <button id="pendingRequestsBtn" type="button" class="stat-pill stat-pill-btn accent-pill">
+                            🕐 HR Approval: <span id="pendingRequestsCount">0</span>
+                        </button>
+                        <button id="missingPunchesBtn" type="button" class="stat-pill stat-pill-btn">
+                            ⚠ Missing Punches: <span id="missingPunchesCount">0</span>
+                        </button>
+                        <div id="rowCount" class="stat-pill">0 employees</div>
+                    </div>
+                </div>
+
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="emp_id">Employee ID <span class="sort-arrow"></span></th>
+                            <th data-sort="full_name">Employee Name <span class="sort-arrow"></span></th>
+                            <th data-sort="position">Position <span class="sort-arrow"></span></th>
+                            <th data-sort="gender">Gender <span class="sort-arrow"></span></th>
+                            <th data-sort="shift_name">Shift Name <span class="sort-arrow"></span></th>
+                            <th data-sort="time_in">Time In <span class="sort-arrow"></span></th>
+                            <th data-sort="status">Calculated Status <span class="sort-arrow"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                </table>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);font-weight:600;">
+                        Rows per page
+                        <select id="tablePageSize" style="padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--r-sm);font-size:13px;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <button id="tablePrevPage" class="page-btn">◀ Prev</button>
+                        <span id="tablePageInfo" class="page-info">Page 1 of 1</span>
+                        <button id="tableNextPage" class="page-btn">Next ▶</button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- EDIT MODAL — shift/time in/out/status plus remarks. Submitting no
+             longer writes directly to the attendance record; it creates a
+             "Pending First Approval" request. Only after BOTH a first
+             approver and, last, an HR user approve it from the Pending
+             Time-In Requests modal does the change take effect. -->
+        <div id="editModal" class="modal">
+            <div class="modal-content edit-modal-content" style="width:560px;">
+
+                <div class="modal-header-row">
+                    <div class="modal-header-text">
+                        <span class="modal-icon-badge icon-badge-accent">✎</span>
+                        <div>
+                            <h2>Edit Attendance</h2>
+                            <p class="modal-header-subtitle">Changes are submitted for two-stage approval</p>
+                        </div>
+                    </div>
+                    <button type="button" class="modal-close-x" onclick="closeModal()" aria-label="Close">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <label>Employee
+                        <input id="modalEmployeeId" disabled>
+                    </label>
+
+                    <div id="editInfoBox" class="edit-info"></div>
+
+                    <!-- Shift comes from the employee's record (shown in the info box above) -->
+                    <input type="hidden" id="editShift">
+
+                    <!-- TIME IN -->
+                    <div class="edit-time-head">
+                        <div class="form-section-label">Time In</div>
+                        <button type="button" class="edit-fill-btn" id="editFillIn"></button>
+                    </div>
+                    <div class="time-picker">
+                        <select id="editTimeInHour" aria-label="Time In hour"></select>
+                        <span class="time-colon">:</span>
+                        <select id="editTimeInMin" aria-label="Time In minutes"></select>
+                        <select id="editTimeInAmPm" aria-label="Time In AM or PM">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                    <div id="editTimeInPreview" class="edit-preview"></div>
+                    <input type="hidden" id="editTimeIn">
+                    <input type="hidden" id="editTimeInStatus">
+
+                    <!-- TIME OUT -->
+                    <div class="edit-time-head">
+                        <div class="form-section-label">Time Out</div>
+                        <button type="button" class="edit-fill-btn" id="editFillOut"></button>
+                    </div>
+                    <div class="time-picker">
+                        <select id="editTimeOutHour" aria-label="Time Out hour"></select>
+                        <span class="time-colon">:</span>
+                        <select id="editTimeOutMin" aria-label="Time Out minutes"></select>
+                        <select id="editTimeOutAmPm" aria-label="Time Out AM or PM">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                    <div id="editTimeOutPreview" class="edit-preview"></div>
+                    <input type="hidden" id="editTimeOut">
+                    <input type="hidden" id="editTimeOutStatus">
+
+                    <label>Remarks / Reason (optional)
+                        <textarea id="editRemarks" rows="3" placeholder="e.g., Physically present, missed clock-in"></textarea>
+                    </label>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="saveAttendance">Submit for Approval</button>
+                    <button id="closeModal">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPLOYEE HISTORY MODAL (simplified: quick summary + clean table) -->
+        <div id="historyModal" class="modal">
+            <div class="modal-content history-modal-content">
+
+            <div class="modal-header-row">
+                <div class="modal-header-text">
+                    <span class="modal-icon-badge icon-badge-accent">📅</span>
+                    <div>
+                        <h2 id="historyModalTitle">Attendance History</h2>
+                        <p id="historyModalSubtitle" class="modal-header-subtitle"></p>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <select id="historyRangeFilter" style="height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;">
+                        <option value="all">All Records</option>
+                        <option value="15">Last 15 Days</option>
+                        <option value="30">Last 30 Days</option>
+                    </select>
+                    <button id="closeHistoryModalX" class="modal-close-x" aria-label="Close">&times;</button>
+                </div>
+            </div>
+
+                <div class="history-export-row">
+                    <span class="export-group-label">Export Range</span>
+                    <input id="historyExportStart" type="date" aria-label="History export start date">
+                    <span class="range-sep">to</span>
+                    <input id="historyExportEnd" type="date" aria-label="History export end date">
+                    <button id="historyExportRangeBtn" type="button" class="page-btn" style="height:38px;font-weight:700;">
+                        ⬇ Export
+                    </button>
+                </div>
+
+                <div id="historyStats" class="history-stats-grid"></div>
+
+                <div class="history-table-wrap">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="history-modal-footer">
+                    <div class="history-pagination">
+                        <button id="historyPrevPage" class="page-btn">◀ Prev</button>
+                        <span id="historyPageInfo" class="page-info">Page 1 of 1</span>
+                        <button id="historyNextPage" class="page-btn">Next ▶</button>
+                    </div>
+                    <button id="closeHistoryModal" class="btn-close-modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- MISSING PUNCHES REPORT MODAL -->
+        <div id="missingPunchesModal" class="modal">
+            <div class="modal-content history-modal-content">
+
+                <div class="modal-header-row">
+                    <div class="modal-header-text">
+                        <span class="modal-icon-badge icon-badge-warning">⚠</span>
+                        <div>
+                            <h2>Missing Punches Report</h2>
+                            <p id="missingPunchesSubtitle" class="modal-header-subtitle"></p>
+                        </div>
+                    </div>
+                    <button id="closeMissingPunchesX" class="modal-close-x" aria-label="Close">&times;</button>
+                </div>
+
+                <div class="history-table-wrap missing-punches-table-wrap">
+                    <div class="history-export-row" style="margin:0 0 14px;">
+                        <span class="export-group-label">Date Range</span>
+                        <input id="missingPunchesStartDate" type="date" aria-label="Missing punches start date">
+                        <span class="range-sep">to</span>
+                        <input id="missingPunchesEndDate" type="date" aria-label="Missing punches end date">
+                        <button id="refreshMissingPunchesBtn" type="button" class="page-btn" style="height:38px;font-weight:700;">Apply</button>
+                        <button id="exportMissingPunchesBtn" type="button" class="page-btn" style="height:38px;font-weight:700;">⬇ Export Excel</button>
+                    </div>
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employee ID</th>
+                                <th>Employee Name</th>
+                                <th>Shift</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                            </tr>
+                        </thead>
+                        <tbody id="missingPunchesTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="history-modal-footer" style="justify-content:flex-end;">
+                    <button id="closeMissingPunchesModal" class="btn-close-modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- STAGE 1: FIRST APPROVAL QUEUE (not password-gated) -->
+        <div id="firstApprovalModal" class="modal">
+            <div class="modal-content history-modal-content">
+
+                <div class="modal-header-row">
+                    <div class="modal-header-text">
+                        <span class="modal-icon-badge icon-badge-warning">1️⃣</span>
+                        <div>
+                            <h2>Pending First Approval</h2>
+                            <p id="firstApprovalSubtitle" class="modal-header-subtitle"></p>
+                        </div>
+                    </div>
+                    <button id="closeFirstApprovalX" class="modal-close-x" aria-label="Close">&times;</button>
+                </div>
+
+                <div class="history-table-wrap pending-requests-table-wrap">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Line</th>
+                                <th>Requested Changes</th>
+                                <th>Requester</th>
+                                <th>Date</th>
+                                <th>Remarks</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="firstApprovalTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="history-modal-footer" style="justify-content:flex-end;">
+                    <button id="closeFirstApprovalModal" class="btn-close-modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+        <div id="pendingRequestsModal" class="modal">
+            <div class="modal-content history-modal-content">
+
+                <div class="modal-header-row">
+                    <div class="modal-header-text">
+                        <span class="modal-icon-badge icon-badge-success">✅</span>
+                        <div>
+                            <h2>Pending Time-In Adjustment Requests (Final / HR Approval)</h2>
+                            <p id="pendingRequestsSubtitle" class="modal-header-subtitle"></p>
+                        </div>
+                    </div>
+                    <button id="closePendingRequestsX" class="modal-close-x" aria-label="Close">&times;</button>
+                </div>
+
+                <div id="hrBulkBar" class="hr-bulk-bar" style="display:none;">
+                    <label class="hr-bulk-selectall">
+                        <input type="checkbox" id="hrSelectAll"> Select all
+                    </label>
+                    <span id="hrSelectedCount" class="hr-bulk-count">0 selected</span>
+                    <div class="hr-bulk-actions">
+                        <button type="button" id="hrBulkApproveBtn" class="request-action-btn request-approve-btn" disabled>Approve Selected</button>
+                        <button type="button" id="hrBulkDeclineBtn" class="request-action-btn request-decline-btn" disabled>Decline Selected</button>
+                    </div>
+                </div>
+
+                <div class="history-table-wrap pending-requests-table-wrap hr-requests-table-wrap">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Line</th>
+                                <th>Requested Changes</th>
+                                <th>Requested By</th>
+                                <th>First Approved By</th>
+                                <th>Date</th>
+                                <th>Remarks</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingRequestsTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="history-modal-footer" style="justify-content:flex-end;">
+                    <button id="closePendingRequestsModal" class="btn-close-modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- REQUESTER NOTIFICATIONS — fed by TIME_IN_APPROVED (and future
+             notification types) written server-side once HR finalizes an
+             approval. Click a notification to mark it read. -->
+        <div id="notificationsModal" class="modal">
+            <div class="modal-content history-modal-content">
+
+                <div class="modal-header-row">
+                    <div class="modal-header-text">
+                        <span class="modal-icon-badge icon-badge-success">🔔</span>
+                        <div>
+                            <h2>Notifications</h2>
+                            <p id="notificationsSubtitle" class="modal-header-subtitle">Updates on your submitted requests</p>
+                        </div>
+                    </div>
+                    <button id="closeNotificationsX" class="modal-close-x" aria-label="Close">&times;</button>
+                </div>
+
+                <div id="notificationsListBody" class="notifications-list-wrap"></div>
+
+                <div class="history-modal-footer" style="justify-content:flex-end;">
+                    <button id="closeNotificationsModal" class="btn-close-modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

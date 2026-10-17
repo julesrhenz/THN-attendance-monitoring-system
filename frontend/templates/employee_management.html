@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try { if (localStorage.getItem("thn_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch(e){}</script>
+<title>Employee Management</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+  --bg:#eef1f6;
+  --surface:#ffffff;
+  --ink:#0f1629;
+  --muted:#67718a;
+  --muted-soft:#98a1b5;
+  --border:#e3e7ee;
+  --border-soft:#edf0f5;
+
+  --primary:#1d4fd8;
+  --primary-dark:#1439a8;
+  --primary-tint:#eaf0ff;
+
+  --day:#b45309;
+  --day-tint:#fef3e2;
+  --night:#4338ca;
+  --night-tint:#eef0fd;
+
+  --danger:#d0261f;
+  --danger-tint:#fdeceb;
+  --danger-dark:#a91d17;
+
+  --success:#15803d;
+  --success-tint:#e9f7ee;
+
+  --shadow-sm:0 1px 2px rgba(15,22,41,.04);
+  --shadow-md:0 10px 30px -12px rgba(15,22,41,.16);
+  --shadow-lg:0 24px 60px -20px rgba(15,22,41,.28);
+  --radius-lg:16px;
+  --radius-md:12px;
+  --radius-sm:8px;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+.main-content{
+  min-width:0;
+  padding:32px clamp(16px,3vw,44px) 48px;
+}
+
+/* ============ PAGE HEAD ============ */
+.page-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-bottom:26px;
+}
+
+.page-head .eyebrow{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--primary);
+  margin:0 0 6px;
+}
+
+.page-head h1{
+  font-size:27px;
+  font-weight:800;
+  letter-spacing:-0.02em;
+  margin:0 0 5px;
+}
+
+.page-head p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.badge-row{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.agency-pill{
+  font-family:"JetBrains Mono",monospace;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:5px 10px;
+  border-radius:999px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--muted);
+}
+
+/* ============ STATS ============ */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.stat-card{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  padding:18px 20px;
+  box-shadow:var(--shadow-sm);
+  position:relative;
+  overflow:hidden;
+}
+
+.stat-card::before{
+  content:"";
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  height:3px;
+  background:var(--border);
+}
+.stat-card.total::before{background:var(--primary);}
+.stat-card.day::before{background:var(--day);}
+.stat-card.night::before{background:var(--night);}
+.stat-card.dept::before{background:var(--success);}
+
+.stat-label{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.stat-value{
+  font-size:28px;
+  font-weight:800;
+  margin-top:8px;
+  letter-spacing:-0.02em;
+  color:var(--ink);
+}
+
+.stat-value.day{color:var(--day);}
+.stat-value.night{color:var(--night);}
+
+/* ============ FILTER HEADER ============ */
+.toolbar-header{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:22px;
+  align-items:center;
+  margin-bottom:12px;
+  box-shadow:var(--shadow-sm);
+}
+
+.filter-group{
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.filter-label{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted-soft);
+  white-space:nowrap;
+}
+
+.toolbar-header-spacer{flex:1;}
+
+/* ============ TOOLBAR (search + actions) ============ */
+.toolbar{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  padding:12px 14px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin-bottom:14px;
+  box-shadow:var(--shadow-sm);
+}
+
+.search-wrap{
+  position:relative;
+  flex:1;
+  min-width:220px;
+}
+
+.search-wrap svg{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  pointer-events:none;
+  color:var(--muted-soft);
+}
+
+#searchInput{
+  width:100%;
+  padding:10px 12px 10px 36px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:14px;
+  font-family:inherit;
+  background:#fbfcfe;
+  color:var(--ink);
+  transition:border-color .15s, background .15s;
+}
+
+#searchInput:focus{
+  outline:none;
+  border-color:var(--primary);
+  background:var(--surface);
+  box-shadow:0 0 0 3px var(--primary-tint);
+}
+
+.segmented{
+  display:flex;
+  background:#f1f3f8;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:3px;
+  gap:2px;
+}
+
+.segmented button{
+  border:none;
+  background:transparent;
+  padding:7px 13px;
+  font-size:13px;
+  font-weight:600;
+  font-family:inherit;
+  color:var(--muted);
+  border-radius:7px;
+  cursor:pointer;
+  transition:background .15s, color .15s;
+  white-space:nowrap;
+}
+
+.segmented button:hover:not(.active){color:var(--ink);}
+
+.segmented button.active{
+  background:var(--surface);
+  color:var(--primary-dark);
+  box-shadow:var(--shadow-sm);
+}
+
+.toolbar-spacer{flex:1;}
+
+/* ============ BUTTONS ============ */
+.btn{
+  border:none;
+  border-radius:var(--radius-sm);
+  padding:10px 16px;
+  font-weight:600;
+  font-size:13px;
+  font-family:inherit;
+  cursor:pointer;
+  transition:opacity .15s, background .15s, transform .05s;
+  white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+}
+
+.btn:active{transform:translateY(1px);}
+
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-dark);}
+
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{opacity:.92;}
+.btn-danger:disabled{background:#f2c9c6;color:#fff;cursor:not-allowed;}
+
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{background:#f6f7fb;color:var(--ink);}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed;}
+
+.btn-primary:disabled{background:#b9c9f5;color:#fff;cursor:not-allowed;}
+
+.btn-edit{
+  background:var(--primary-tint);
+  color:var(--primary-dark);
+  border:none;
+  border-radius:var(--radius-sm);
+  padding:6px 12px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .15s;
+}
+.btn-edit:hover{background:#dbe6ff;}
+
+/* ============ STATUS ============ */
+#status{
+  font-size:13px;
+  color:var(--muted);
+  margin:2px 4px 12px;
+  min-height:18px;
+}
+#status.error{color:var(--danger-dark);font-weight:600;}
+
+/* ============ TABLE ============ */
+.table-card{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:var(--shadow-md);
+}
+
+.table-scroll{overflow-x:auto;}
+
+table{width:100%;border-collapse:collapse;min-width:700px;}
+
+thead th{
+  position:sticky;
+  top:0;
+  background:#f8f9fc;
+  text-align:left;
+  padding:13px 16px;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted);
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+
+tbody td{
+  padding:13px 16px;
+  font-size:14px;
+  border-top:1px solid var(--border-soft);
+  vertical-align:middle;
+  text-transform:uppercase;
+}
+
+tbody tr{transition:background .1s;}
+tbody tr:hover td{background:#f9fafc;}
+
+.id-chip{
+  font-family:"JetBrains Mono",monospace;
+  font-size:12.5px;
+  font-weight:600;
+  background:var(--primary-tint);
+  color:var(--primary-dark);
+  padding:4px 9px;
+  border-radius:6px;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  display:inline-block;
+}
+
+.name-cell{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600;
+}
+
+.avatar{
+  width:31px;
+  height:31px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  box-shadow:0 2px 6px rgba(29,79,216,.25);
+}
+
+.shift-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:12px;
+  font-weight:600;
+  padding:5px 10px;
+  border-radius:999px;
+}
+
+.shift-pill.day{background:var(--day-tint);color:var(--day);}
+.shift-pill.night{background:var(--night-tint);color:var(--night);}
+
+.shift-pill .dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:currentColor;
+}
+
+.leave-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11px;
+  font-weight:700;
+  padding:4px 9px;
+  border-radius:999px;
+  background:var(--danger-tint);
+  color:var(--danger-dark);
+  margin-left:6px;
+}
+
+.dept-text{color:var(--muted);}
+
+.empty-row td{
+  text-align:center;
+  color:var(--muted-soft);
+  padding:56px 20px;
+  font-size:14px;
+}
+
+.table-foot{
+  padding:11px 16px;
+  font-size:12.5px;
+  color:var(--muted);
+  border-top:1px solid var(--border-soft);
+  background:#fafbfd;
+}
+
+/* ============ PAGINATION ============ */
+.pagination{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.pagination-controls{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px;
+}
+.page-size{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+}
+.page-size select{
+  padding:5px 8px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-family:inherit;
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--ink);
+  background:var(--surface);
+  cursor:pointer;
+}
+.pager{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.page-btn{
+  min-width:32px;
+  height:32px;
+  padding:0 10px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  color:var(--muted);
+  font-family:inherit;
+  font-size:12.5px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.page-btn:hover:not(:disabled):not(.active){background:#f6f7fb;color:var(--ink);}
+.page-btn.active{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:#fff;
+  cursor:default;
+}
+.page-btn:disabled{opacity:.45;cursor:not-allowed;}
+.page-ellipsis{padding:0 4px;color:var(--muted-soft);}
+
+/* ============ MODALS ============ */
+.modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(10,14,26,.6);
+  backdrop-filter:blur(3px);
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:20px;
+  animation:overlayFade .15s ease;
+}
+.modal-overlay.open{display:flex;}
+
+@keyframes overlayFade{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+.modal-card{
+  background:var(--surface);
+  border-radius:18px;
+  width:100%;
+  max-width:600px;
+  box-shadow:0 30px 70px -20px rgba(15,22,41,.35), 0 0 0 1px rgba(15,22,41,.04);
+  max-height:min(88vh, 720px);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  animation:modalRise .18s cubic-bezier(.16,1,.3,1);
+}
+
+@keyframes modalRise{
+  from{opacity:0; transform:translateY(8px) scale(.98);}
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+
+/* Forms sit directly between .modal-card and .modal-body/.modal-actions,
+   so they must also participate in the flex column layout — otherwise
+   the body can't shrink and the scrollbar never activates. */
+.modal-card form{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  flex:1;
+  overflow:hidden;
+}
+
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 28px;
+  border-bottom:1px solid var(--border-soft);
+  background:linear-gradient(180deg,#fbfcfe,var(--surface));
+  flex-shrink:0;
+}
+
+.modal-head-text{display:flex;flex-direction:column;gap:2px;}
+
+.modal-head h2{
+  margin:0;
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+}
+
+.modal-head .modal-subtitle{
+  margin:0;
+  font-size:12.5px;
+  color:var(--muted);
+}
+
+.modal-close{
+  border:none;
+  background:var(--bg);
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  font-size:18px;
+  line-height:1;
+  color:var(--muted);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s, color .15s;
+  flex-shrink:0;
+}
+.modal-close:hover{background:var(--danger-tint);color:var(--danger-dark);}
+
+.modal-body{
+  padding:22px 28px;
+  overflow-y:auto;
+  flex:1 1 auto;
+  min-height:0;
+}
+
+/* Visible, easy-to-grab scrollbar instead of an invisible/thin default */
+.modal-body::-webkit-scrollbar{
+  width:10px;
+}
+.modal-body::-webkit-scrollbar-track{
+  background:transparent;
+}
+.modal-body::-webkit-scrollbar-thumb{
+  background:var(--border);
+  border-radius:8px;
+}
+.modal-body::-webkit-scrollbar-thumb:hover{
+  background:var(--muted-soft);
+}
+.modal-body{
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+
+.form-row{display:flex;gap:14px;}
+.form-row .form-group{flex:1;}
+
+.form-group{margin-bottom:18px;display:flex;flex-direction:column;gap:7px;}
+.form-group:last-child{margin-bottom:0;}
+
+.form-group label{
+  font-size:11.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--muted-soft);
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group textarea,
+.form-group select{
+  padding:12px 14px;
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  font-family:inherit;
+  font-size:14px;
+  color:var(--ink);
+  background:#fbfcfe;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+  width:100%;
+}
+
+.form-group textarea{
+  resize:vertical;
+  min-height:70px;
+}
+
+.form-group input[type="text"]::placeholder,
+.form-group textarea::placeholder{color:var(--muted-soft);}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="date"]:focus,
+.form-group textarea:focus,
+.form-group select:focus{
+  outline:none;
+  border-color:var(--primary);
+  background:var(--surface);
+  box-shadow:0 0 0 4px var(--primary-tint);
+}
+
+.form-group input:disabled{
+  background:#f1f3f8;
+  color:var(--muted-soft);
+  border-color:var(--border-soft);
+  cursor:not-allowed;
+}
+
+.form-group input[readonly]{
+  background:#f1f3f8;
+  color:var(--muted);
+  cursor:not-allowed;
+}
+
+.form-group select{
+  background:#fbfcfe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2367718a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 14px center;
+  appearance:none;
+  padding-right:36px;
+}
+
+.radio-row{display:flex;gap:10px;}
+.radio-option{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:600;
+  padding:12px 10px;
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  cursor:pointer;
+  color:var(--muted);
+  background:#fbfcfe;
+  transition:border-color .15s, color .15s, background .15s;
+}
+.radio-option:hover{border-color:var(--muted-soft);}
+.radio-option:has(input:checked){
+  border-color:var(--primary);
+  color:var(--primary-dark);
+  background:var(--primary-tint);
+  box-shadow:0 0 0 4px var(--primary-tint);
+}
+.radio-option input{accent-color:var(--primary);margin:0;}
+
+.modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:18px 28px;
+  border-top:1px solid var(--border-soft);
+  background:var(--surface);
+  flex-shrink:0;
+}
+
+.modal-actions .btn{
+  padding:11px 22px;
+}
+.employee-row{cursor:pointer;}
+.employee-row:hover td{background:#f5f8ff;}
+.employee-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px 18px;
+}
+.employee-detail-item{padding:10px 0;border-bottom:1px solid var(--border);}
+.employee-detail-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;}
+.employee-detail-value{
+  font-size:14px;
+  color:var(--ink);
+  word-break:break-word;
+  text-transform:uppercase;
+}
+@media (max-width:560px){.employee-detail-grid{grid-template-columns:1fr;}}
+
+/* ============ ACCESS CONTROL (non-manager / non-deleter users) ============
+   Driven from employee_management.js based on THREE body attributes:
+     data-can-manage-employees  -> role_info.can_manage_employees (auth.py)
+     data-can-bulk-delete       -> role_info.can_bulk_delete (auth.py)
+     data-can-declare-no-work   -> role_info.can_declare_no_work (auth.py)
+
+   Three independent tiers, NOT one combined "view-only" state:
+
+   body.no-manage-access
+     Full employee management is off (add/edit/leave/return/separate/
+     rehire). Hides the per-row Edit button and the Add/Leave/Return
+     toolbar buttons. Does NOT touch Bulk Delete (its own gate below) or
+     selection checkboxes — a Level 2-4 user without manage access may
+     still need those for Bulk Delete or No Work.
+
+   Bulk Delete button visibility
+     Controlled directly in JS via CAN_BULK_DELETE (not a body class),
+     since it's a single button rather than a whole class of controls.
+     Level 1 (LINE / Line Leader) never sees it, regardless of
+     CAN_MANAGE_EMPLOYEES.
+
+   body.no-selection-access
+     NONE of the three tiers — nothing on this page is selectable.
+     Hides the row checkboxes and the select-all checkbox entirely,
+     since there is nothing left a selection could be used for.
+
+   This is UX only, exactly like the warning already written in auth.py
+   about client-side checks. It is trivially bypassed via devtools/curl.
+   The mutating routes this file calls MUST enforce the same checks
+   server-side (can_manage_employees-equivalent for management routes;
+   bulk_delete_required for /api/employees/bulk-delete;
+   no_work_access_required + can_view_employee() for /api/no-work) or a
+   non-authorized user can still perform these actions directly. */
+body.no-manage-access .btn-edit{
+  display:none;
+}
+
+body.no-selection-access .row-checkbox,
+body.no-selection-access #selectAllCheckbox{
+  display:none;
+}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:720px){
+  .toolbar-header{flex-direction:column;align-items:stretch;}
+  .filter-group{justify-content:space-between;}
+  .toolbar-header-spacer{display:none;}
+  #addEmployeeBtn{justify-content:center;}
+}
+@media(max-width:560px){
+  .stats{grid-template-columns:1fr;}
+  .form-row{flex-direction:column;gap:0;}
+}
+
+/* ============ DARK MODE: bulk action toolbar buttons ============ */
+html[data-theme="dark"] .toolbar .btn{
+  border:1px solid transparent !important;
+  transition:background .15s, border-color .15s, opacity .15s;
+}
+/* primary (Mark as On Leave, Mark No Work, Clear No Work, Separated, Rehired) */
+html[data-theme="dark"] .toolbar .btn-primary{
+  background:#2f5bd8 !important;
+  color:#ffffff !important;
+  border-color:#4f7df0 !important;
+}
+html[data-theme="dark"] .toolbar .btn-primary:hover:not(:disabled){
+  background:#3d6af0 !important;
+}
+/* danger (Bulk Delete) */
+html[data-theme="dark"] .toolbar .btn-danger{
+  background:#c62828 !important;
+  color:#ffffff !important;
+  border-color:#ef5350 !important;
+}
+html[data-theme="dark"] .toolbar .btn-danger:hover:not(:disabled){
+  background:#e03a3a !important;
+}
+/* ghost (Return to Work, Clear Selection) */
+html[data-theme="dark"] .toolbar .btn-ghost{
+  background:#1b2640 !important;
+  color:#e5eaf5 !important;
+  border-color:rgba(255,255,255,.18) !important;
+}
+html[data-theme="dark"] .toolbar .btn-ghost:hover:not(:disabled){
+  background:#26345a !important;
+  border-color:#60a5fa !important;
+  color:#ffffff !important;
+}
+/* disabled: clearly inactive instead of washed-out pastel */
+html[data-theme="dark"] .toolbar .btn:disabled{
+  background:#161f33 !important;
+  color:#6b7794 !important;
+  border-color:rgba(255,255,255,.08) !important;
+  opacity:1 !important;
+  cursor:not-allowed;
+}
+
+/* ============ DARK MODE: table row hover + Edit button ============ */
+html[data-theme="dark"] tbody tr:hover td,
+html[data-theme="dark"] .employee-row:hover td{
+  background:rgba(96,165,250,.10) !important;
+  color:#f1f5ff !important;
+}
+html[data-theme="dark"] .employee-row:hover .dept-text{
+  color:#cbd5e8 !important;
+}
+html[data-theme="dark"] .btn-edit{
+  background:rgba(79,125,240,.18) !important;
+  color:#a9c2ff !important;
+  border:1px solid rgba(96,165,250,.45) !important;
+  padding:5px 12px !important;
+}
+html[data-theme="dark"] .btn-edit:hover{
+  background:#2f5bd8 !important;
+  border-color:#4f7df0 !important;
+  color:#ffffff !important;
+}
+html[data-theme="dark"] .page-btn:hover:not(:disabled):not(.active){
+  background:rgba(96,165,250,.14) !important;
+  color:#ffffff !important;
+}
+/* SEPARATED pill has inline light colors */
+html[data-theme="dark"] .leave-pill[style]{
+  background:rgba(239,68,68,.18) !important;
+  color:#fca5a5 !important;
+}
+
+/* ============ DARK MODE: filter bar (Agency / Shift / Department / Add) ============ */
+html[data-theme="dark"] .segmented{
+  background:#0f1727 !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  box-shadow:none !important;
+  outline:none !important;
+}
+html[data-theme="dark"] .segmented button{
+  background:transparent !important;
+  color:#a3afc7 !important;
+  box-shadow:none !important;
+  outline:none !important;
+}
+html[data-theme="dark"] .segmented button:hover:not(.active){
+  background:rgba(255,255,255,.07) !important;
+  color:#ffffff !important;
+}
+html[data-theme="dark"] .segmented button.active{
+  background:#2f5bd8 !important;
+  color:#ffffff !important;
+  box-shadow:0 1px 3px rgba(0,0,0,.4) !important;
+}
+html[data-theme="dark"] .segmented button:focus-visible{
+  outline:2px solid #60a5fa !important;
+  outline-offset:1px;
+}
+html[data-theme="dark"] #departmentFilter{
+  background-color:#0f1727 !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a3afc7' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat:no-repeat !important;
+  background-position:right 10px center !important;
+  color:#e5eaf5 !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+}
+html[data-theme="dark"] #departmentFilter:hover,
+html[data-theme="dark"] #departmentFilter:focus{
+  border-color:#60a5fa !important;
+  outline:none;
+}
+html[data-theme="dark"] #departmentFilter option{
+  background:#172033;
+  color:#e5eaf5;
+}
+html[data-theme="dark"] #addEmployeeBtn{
+  background:#2f5bd8 !important;
+  color:#ffffff !important;
+  border:1px solid #4f7df0 !important;
+}
+html[data-theme="dark"] #addEmployeeBtn:hover{
+  background:#3d6af0 !important;
+}
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ui-refresh.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=7">
+<script defer src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
+</head>
+<body data-can-manage-employees="{{ 'true' if role_info.can_manage_employees else 'false' }}"
+      data-can-bulk-delete="{{ 'true' if role_info.can_bulk_delete else 'false' }}"
+      data-can-declare-no-work="{{ 'true' if role_info.can_declare_no_work else 'false' }}">
+
+{% include 'sidebar.html' %}
+
+<div class="main-content">
+
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Workforce Management</p>
+      <h1>Employee Directory</h1>
+      <p>View, add, and manage employee records across all agencies.</p>
+    </div>
+    <div class="badge-row">
+      <span class="agency-pill">THN</span>
+      <span class="agency-pill">CCI</span>
+      <span class="agency-pill">NATCORP</span>
+      <span class="agency-pill">EMIS</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card total">
+      <div class="stat-label">Active Employees</div>
+      <div class="stat-value" id="totalCount">0</div>
+    </div>
+    <div class="stat-card day">
+      <div class="stat-label">Day Shift</div>
+      <div class="stat-value day" id="dayCount">0</div>
+    </div>
+    <div class="stat-card night">
+      <div class="stat-label">Night Shift</div>
+      <div class="stat-value night" id="nightCount">0</div>
+    </div>
+    <div class="stat-card dept">
+      <div class="stat-label">Departments</div>
+      <div class="stat-value" id="deptCount">0</div>
+    </div>
+  </div>
+
+  <div class="toolbar-header">
+    <div class="filter-group">
+      <span class="filter-label">Agency</span>
+      <div class="segmented" id="agencySegmented">
+        <button type="button" class="active" data-agency="all">All</button>
+        <button type="button" data-agency="THN">THN</button>
+        <button type="button" data-agency="CCI">CCI</button>
+        <button type="button" data-agency="NATCORP">NATCORP</button>
+        <button type="button" data-agency="EMIS">EMIS</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Shift</span>
+      <div class="segmented" id="shiftSegmented">
+        <button type="button" class="active" data-shift="all">All</button>
+        <button type="button" data-shift="day">Day</button>
+        <button type="button" data-shift="night">Night</button>
+      </div>
+    </div>
+    <div class="filter-group">
+  <span class="filter-label">Department</span>
+  <select id="departmentFilter" style="padding:8px 32px 8px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);background:#fbfcfe url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2367718a%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E') no-repeat right 10px center;appearance:none;cursor:pointer;">
+    <option value="all">All Departments</option>
+  </select>
+</div>
+    <div class="toolbar-header-spacer"></div>
+
+    <button class="btn btn-primary" id="addEmployeeBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add New Employee
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Search by name or employee ID...">
+    </div>
+
+    <div class="toolbar-spacer"></div>
+
+    <button class="btn btn-danger" id="bulkDeleteBtn" disabled>Bulk Delete</button>
+    <button class="btn btn-primary" id="bulkLeaveBtn" disabled>Mark as On Leave</button>
+    <button class="btn btn-ghost" id="bulkReturnBtn" disabled>Return to Work</button>
+    <button class="btn btn-ghost" id="clearSelectionBtn">Clear Selection</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;"><input type="checkbox" id="selectAllCheckbox"></th>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Gender</th>
+            <th>Shift</th>
+            <th style="width:70px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="employeeTableBody"></tbody>
+      </table>
+    </div>
+    <div class="table-foot" id="tableFoot"></div>
+  </div>
+
+</div>
+
+<!-- ============ EMPLOYEE DETAILS MODAL ============ -->
+<div class="modal-overlay" id="employeeDetailsOverlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-head-text"><h2 id="employeeDetailsTitle">Employee Information</h2><span class="modal-subtitle">Employee record</span></div>
+      <button type="button" class="modal-close" id="employeeDetailsCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body"><div class="employee-detail-grid" id="employeeDetailsBody"></div></div>
+  </div>
+</div>
+
+<!-- ============ LEAVE REASON MODAL ============ -->
+<div class="modal-overlay" id="leaveModalOverlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-head-text"><h2>Mark Employee(s) On Leave</h2><span class="modal-subtitle">Choose a leave type, then provide a reason and (optionally) an expected return date</span></div>
+      <button type="button" class="modal-close" id="leaveModalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+
+    <form id="leaveForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="leaveType">Leave Type</label>
+          <select id="leaveType" name="leaveType" required>
+            <option value="">-- Select Leave Type --</option>
+            <option value="VL">VL — Vacation Leave</option>
+            <option value="SL">SL — Sick Leave</option>
+            <option value="ML">ML — Maternity Leave</option>
+            <option value="SS">SS — Suspension</option>
+            <option value="PL">PL — Paternity Leave</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="leaveReason">Reason for Leave</label>
+          <textarea id="leaveReason" name="reason" rows="3" placeholder="e.g. Medical leave, family emergency, vacation..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="leaveUntil">Expected Return Date (optional)</label>
+          <input type="date" id="leaveUntil" name="leaveUntil">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="leaveModalCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm On Leave</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ ADD EMPLOYEE MODAL ============ -->
+<div class="modal-overlay" id="employeeModalOverlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Add New Employee</h2>
+      <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+
+    <form id="employeeForm">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="empLastName">Last Name</label>
+            <input type="text" id="empLastName" name="lastName" required>
+          </div>
+          <div class="form-group">
+            <label for="empFirstName">First Name</label>
+            <input type="text" id="empFirstName" name="firstName" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="empDepartment">Department</label>
+          <input type="text" id="empDepartment" name="department" list="departmentOptions"
+                 placeholder="Select or type a department" autocomplete="off" required>
+          <datalist id="departmentOptions"></datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="empPosition">Position</label>
+          <input type="text" id="empPosition" name="position" list="positionOptions"
+                 placeholder="Select or type a position" autocomplete="off" required>
+          <datalist id="positionOptions"></datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="empGender">Gender</label>
+          <select id="empGender" name="gender">
+            <option value="">-- Select Gender --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="empAgency">Agency</label>
+            <select id="empAgency" name="agency" required>
+              <option value="THN">THN</option>
+              <option value="CCI">CCI</option>
+              <option value="NATCORP">NATCORP</option>
+              <option value="EMIS">EMIS</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="empNumber">Employee Number</label>
+            <input type="text" id="empNumber" name="empNumber" placeholder="e.g. 9811" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="empDateHired">Date Hired</label>
+            <input type="date" id="empDateHired" name="dateHired">
+          </div>
+          <div class="form-group">
+            <label for="empTenure">Tenure</label>
+            <input type="text" id="empTenure" name="tenure" placeholder="Auto-calculated from date hired" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Shift</label>
+          <div class="radio-row">
+            <label class="radio-option">
+              <input type="radio" name="shift" value="day" checked> Day Shift
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="shift" value="night"> Night Shift
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="modalCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ EDIT EMPLOYEE MODAL ============ -->
+<div class="modal-overlay" id="editEmployeeModalOverlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Edit Employee</h2>
+      <button type="button" class="modal-close" id="editModalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+
+    <form id="editEmployeeForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editEmpId">Employee ID</label>
+          <input type="text" id="editEmpId" name="empId" disabled>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editLastName">Last Name</label>
+            <input type="text" id="editLastName" name="lastName" required>
+          </div>
+          <div class="form-group">
+            <label for="editFirstName">First Name</label>
+            <input type="text" id="editFirstName" name="firstName" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editGender">Gender</label>
+          <select id="editGender" name="gender">
+            <option value="">-- Select Gender --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editDepartment">Department</label>
+          <input type="text" id="editDepartment" name="department" placeholder="e.g. Administration" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="editPosition">Position</label>
+          <input type="text" id="editPosition" name="position" placeholder="e.g. Staff" readonly>
+        </div>
+
+        <!-- NEW: Production Line selector — hidden automatically when
+             Department is ADMIN, since those employees aren't tied
+             to a production line. -->
+        <div class="form-group" id="editLineGroup">
+          <label for="editLine">Production Line</label>
+          <select id="editLine" name="line" disabled>
+            <option value="">-- Select Line --</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editDateHired">Date Hired</label>
+            <input type="date" id="editDateHired" name="dateHired">
+          </div>
+          <div class="form-group">
+            <label for="editTenure">Tenure</label>
+            <input type="text" id="editTenure" name="tenure" placeholder="Auto-calculated from date hired" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Shift</label>
+          <div class="radio-row">
+            <label class="radio-option">
+              <input type="radio" name="editShift" value="day"> Day Shift
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="editShift" value="night"> Night Shift
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="editModalCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/employee_management.js') }}"></script>
+
+</body>
+</html>

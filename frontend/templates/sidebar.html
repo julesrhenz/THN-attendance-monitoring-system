@@ -1,0 +1,1439 @@
+<style>
+html, body{
+    overflow-x: hidden;
+}
+:root{
+    --sidebar-bg-top:#0c1424;
+    --sidebar-bg-bottom:#080d18;
+    --sidebar-border:rgba(148,163,184,.08);
+    --sidebar-text:#aeb8c9;
+    --sidebar-text-strong:#e7ebf2;
+    --sidebar-muted:#8791a7;
+    --sidebar-hover:rgba(255,255,255,.045);
+    --sidebar-accent:#4f7cff;
+    --sidebar-accent-dim:#3660e0;
+    --sidebar-accent-soft:rgba(79,124,255,.13);
+}
+
+*{box-sizing:border-box;}
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:258px !important;
+    height:100vh;                       /* oldest fallback */
+    height:calc(var(--vh, 1vh) * 100);  /* JS fallback for old browsers */
+    height:100dvh;  
+    background:linear-gradient(180deg,var(--sidebar-bg-top) 0%,var(--sidebar-bg-bottom) 100%);
+    color:var(--sidebar-text);
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+    box-shadow:8px 0 30px rgba(0,0,0,.45);
+    border-right:1px solid var(--sidebar-border);
+    font-family:Inter,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+}
+
+.sidebar::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:2px;
+    background:linear-gradient(90deg,var(--sidebar-accent),transparent 75%);
+}
+
+.sidebar::-webkit-scrollbar{
+    width:5px;
+}
+
+.sidebar::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb{
+    background:#26304a;
+    border-radius:10px;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    padding:22px 22px 20px;
+    border-bottom:1px solid var(--sidebar-border);
+}
+
+.logo-mark{
+    position:relative;
+    width:40px;
+    height:40px;
+    flex-shrink:0;
+    border-radius:11px;
+    overflow:hidden;
+    background:linear-gradient(145deg,#1a2540,#131b30);
+    border:1px solid rgba(255,255,255,.06);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.logo-mark img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    position:relative;
+    z-index:1;
+}
+
+.logo-mark.logo-fallback img{
+    display:none;
+}
+
+.logo-mark.logo-fallback::after{
+    content:"TH";
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:.5px;
+    color:var(--sidebar-accent);
+}
+
+.logo-text{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+}
+
+.logo-title{
+    color:var(--sidebar-text-strong);
+    font-size:14.5px;
+    font-weight:700;
+    letter-spacing:.3px;
+    white-space:nowrap;
+}
+
+.logo-subtitle{
+    font-size:11px;
+    color:var(--sidebar-muted);
+    font-weight:500;
+    letter-spacing:.4px;
+}
+
+/* ── User profile card (top of sidebar, under the logo) ─────────── */
+.user-profile{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:18px 22px;
+    border-bottom:1px solid var(--sidebar-border);
+    background:rgba(255,255,255,.015);
+}
+
+.user-avatar{
+    flex-shrink:0;
+    width:40px;
+    height:40px;
+    border-radius:11px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(145deg,var(--sidebar-accent),var(--sidebar-accent-dim));
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.3px;
+    box-shadow:0 4px 12px rgba(79,124,255,.25);
+}
+
+.user-profile-text{
+    min-width:0;
+    flex:1 1 auto;
+}
+
+.user-profile-name{
+    color:var(--sidebar-text-strong);
+    font-size:13.5px;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin-bottom:5px;
+}
+
+.user-profile-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    color:var(--sidebar-accent);
+    background:var(--sidebar-accent-soft);
+    border:1px solid rgba(79,124,255,.25);
+    padding:3px 9px;
+    border-radius:20px;
+    max-width:100%;
+}
+
+.user-profile-badge .badge-dot{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:currentColor;
+    flex-shrink:0;
+}
+
+.user-profile-badge span.badge-label{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+/* ── Sidebar search/filter box ───────────────────────────────── */
+.sidebar-search{
+    position:relative;
+    padding:14px 18px 12px;
+    border-bottom:1px solid var(--sidebar-border);
+}
+
+.sidebar-search input{
+    width:100%;
+    padding:9px 12px 9px 34px;
+    border-radius:8px;
+    border:1px solid rgba(148,163,184,.16);
+    background:#0f1830;
+    color:var(--sidebar-text-strong);
+    font:inherit;
+    font-size:13px;
+}
+
+.sidebar-search input::placeholder{
+    color:var(--sidebar-muted);
+}
+
+.sidebar-search input:focus{
+    outline:none;
+    border-color:var(--sidebar-accent);
+    box-shadow:0 0 0 3px var(--sidebar-accent-soft);
+}
+
+.sidebar-search svg{
+    position:absolute;
+    left:29px;
+    top:50%;
+    transform:translateY(-50%);
+    width:15px;
+    height:15px;
+    color:var(--sidebar-muted);
+    pointer-events:none;
+}
+
+.sidebar-search-empty{
+    display:none;
+    padding:14px 22px;
+    font-size:12.5px;
+    color:var(--sidebar-muted);
+    text-align:center;
+}
+
+/* JS toggles this on <body> while a search is active, so we can hide
+   section headers (grouping stops mattering once filtered) and show
+   the "no results" message when nothing matches. */
+body.sidebar-filtering .menu-section-header{
+    display:none;
+}
+
+body.sidebar-filtering .menu-section.collapsed .menu-section-items{
+    max-height:500px; /* force-expand collapsed sections while filtering */
+    padding-bottom:6px;
+}
+
+body.sidebar-filtering .menu-item[data-search-hidden]{
+    display:none;
+}
+
+body.sidebar-filtering .menu-section[data-search-empty]{
+    display:none;
+}
+
+.menu-section{
+    border-bottom:1px solid rgba(255,255,255,.035);
+}
+
+.menu-section-header{
+    width:100%;
+    background:none;
+    border:none;
+    color:var(--sidebar-muted);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:17px 22px 10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-size:10.5px;
+    font-weight:700;
+    cursor:pointer;
+    transition:color .2s ease;
+    font-family:inherit;
+}
+
+.menu-section-header:hover{
+    color:#b4bed0;
+}
+
+.chevron{
+    display:flex;
+    transition:transform .25s ease;
+    color:var(--sidebar-muted);
+}
+
+.menu-section.collapsed .chevron{
+    transform:rotate(-90deg);
+}
+
+.menu-section-items{
+    overflow:hidden;
+    max-height:500px;
+    transition:max-height .3s ease;
+    padding-bottom:6px;
+}
+
+.menu-section.collapsed .menu-section-items{
+    max-height:0;
+    padding-bottom:0;
+}
+
+.menu-item{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:2px 12px;
+    padding:10px 12px;
+    min-height:40px;
+    border-radius:9px;
+    color:var(--sidebar-text);
+    text-decoration:none;
+    transition:background .18s ease,color .18s ease;
+    font-size:13.5px;
+    font-weight:500;
+    letter-spacing:.1px;
+}
+
+.menu-item .icon{
+    width:20px;
+    height:20px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--sidebar-muted);
+    transition:color .18s ease;
+}
+
+.menu-item .label{
+    flex:1 1 auto;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.menu-item .icon svg{
+    width:18px;
+    height:18px;
+}
+
+.menu-item:hover{
+    background:var(--sidebar-hover);
+    color:var(--sidebar-text-strong);
+}
+
+.menu-item:hover .icon{
+    color:#b4bed0;
+}
+
+.menu-item.active{
+    color:var(--sidebar-text-strong);
+    background:var(--sidebar-accent-soft);
+    font-weight:600;
+}
+
+.menu-item.active .icon{
+    color:var(--sidebar-accent);
+}
+
+.menu-item.active::before{
+    content:"";
+    position:absolute;
+    left:-12px;
+    top:6px;
+    bottom:6px;
+    width:3px;
+    border-radius:0 3px 3px 0;
+    background:linear-gradient(180deg,var(--sidebar-accent),var(--sidebar-accent-dim));
+}
+
+.logout-container{
+    margin-top:auto;
+    padding:14px 12px;
+    border-top:1px solid var(--sidebar-border);
+}
+
+.logout-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    text-decoration:none;
+    color:#e9a5a5;
+    padding:11px;
+    border-radius:9px;
+    background:rgba(239,68,68,.06);
+    border:1px solid rgba(239,68,68,.12);
+    transition:background .2s ease,color .2s ease,border-color .2s ease;
+    font-weight:600;
+    font-size:13px;
+}
+
+.logout-btn svg{
+    width:16px;
+    height:16px;
+}
+
+.logout-btn:hover{
+    background:rgba(239,68,68,.14);
+    color:#fecaca;
+    border-color:rgba(239,68,68,.22);
+}
+
+.sidebar-footer{
+    padding:14px 18px 18px;
+    text-align:center;
+    font-size:11px;
+    color:#8791a7;
+    letter-spacing:.3px;
+}
+
+.main-content{
+    margin-left:258px !important; /* forced to match .sidebar width above 480px */
+    min-width:0;
+}
+
+.sidebar-toggle{
+    display:none;
+    position:fixed;
+    top:12px;
+    left:12px;
+    z-index:3000;
+    width:42px;
+    height:42px;
+    align-items:center;
+    justify-content:center;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:11px;
+    color:#e7ebf2;
+    background:#0c1424;
+    box-shadow:0 8px 20px rgba(0,0,0,.35);
+    cursor:pointer;
+}
+
+.sidebar-toggle svg{
+    width:20px;
+    height:20px;
+}
+
+.sidebar-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .22s ease;
+    z-index:2400;
+}
+
+body.sidebar-open .sidebar-backdrop{
+    opacity:1;
+    pointer-events:auto;
+}
+
+/* ============================================================
+   DESKTOP COLLAPSIBLE SIDEBAR (icon-only rail)
+   Separate from the mobile drawer below -- this lets desktop users
+   shrink the sidebar down to icons only, to reclaim horizontal
+   space. State lives on <body class="sidebar-collapsed"> and is
+   persisted in localStorage; it's restored by the synchronous
+   inline script further down (same spot that already restores
+   per-section collapsed state) so there's no flash of the wrong
+   width on first paint.
+
+   Everything below animates on purpose: .sidebar/.main-content get
+   an explicit width/margin transition, and every bit of text that
+   disappears (labels, headers, search box, footer) is faded and
+   shrunk via opacity + max-width/max-height rather than an instant
+   display:none, so the whole thing folds smoothly instead of
+   snapping/flickering. Keep every collapse transition here at the
+   same .22s duration so they stay in sync with each other.
+   ============================================================ */
+.sidebar{
+    transition:width .22s ease;
+}
+
+.main-content{
+    transition:margin-left .22s ease;
+}
+
+/* position:fixed (not absolute) on purpose -- .sidebar has
+   overflow-y:auto, which per spec forces its overflow-x to compute
+   as "auto" too, so a child sitting right at/past its edge was
+   getting clipped by that box instead of floating over the page
+   (the exact same issue already called out above for the
+   hover-summary panel, and what caused the toggle to look cropped).
+   Fixed positioning escapes that clipping, and its "left" is keyed
+   to the sidebar's two known widths so it slides in step with the
+   width transition instead of jumping. */
+.sidebar-collapse-toggle{
+    position:fixed;
+    top:24px;
+    left:245px; /* 258px sidebar width - 13px, straddling the edge */
+    width:26px;
+    height:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#131d33;
+    border:1px solid rgba(148,163,184,.2);
+    border-radius:50%;
+    color:var(--sidebar-text);
+    cursor:pointer;
+    z-index:2600;
+    transition:left .22s ease,background .18s ease,color .18s ease;
+}
+
+body.sidebar-collapsed .sidebar-collapse-toggle{
+    left:63px; /* 76px collapsed sidebar width - 13px */
+}
+
+.sidebar-collapse-toggle:hover{
+    background:#1a2540;
+    color:var(--sidebar-text-strong);
+}
+
+.sidebar-collapse-toggle svg{
+    width:14px;
+    height:14px;
+    transition:transform .22s ease;
+}
+
+body.sidebar-collapsed .sidebar-collapse-toggle svg{
+    transform:rotate(180deg);
+}
+
+body.sidebar-collapsed .sidebar{
+    width:76px !important;
+}
+
+body.sidebar-collapsed .main-content{
+    margin-left:76px !important;
+}
+
+.logo{
+    transition:padding .22s ease;
+}
+
+body.sidebar-collapsed .logo{
+    padding:22px 0 20px;
+    justify-content:center;
+}
+
+.user-profile{
+    transition:padding .22s ease;
+}
+
+body.sidebar-collapsed .user-profile{
+    justify-content:center;
+    padding:18px 0;
+}
+
+/* Text blocks next to a fixed-size icon (logo, avatar): fold away by
+   shrinking max-width to 0 while fading out, instead of vanishing
+   outright -- so the icon eases into the centered spot rather than
+   jumping there the instant the sidebar starts resizing. */
+.logo-text,
+.user-profile-text{
+    max-width:180px;
+    overflow:hidden;
+    opacity:1;
+    transition:max-width .22s ease,opacity .16s ease;
+}
+
+body.sidebar-collapsed .logo-text,
+body.sidebar-collapsed .user-profile-text{
+    max-width:0;
+    opacity:0;
+}
+
+.logo,
+.user-profile{
+    transition:padding .22s ease,gap .22s ease;
+}
+
+body.sidebar-collapsed .logo,
+body.sidebar-collapsed .user-profile{
+    gap:0;
+}
+
+/* Block-level chunks (search box, section headers, footer, language
+   picker): fold away by collapsing max-height instead of max-width,
+   since they stack vertically rather than sitting beside an icon. */
+.sidebar-search{
+    overflow:hidden;
+    max-height:70px;
+    opacity:1;
+    transition:max-height .22s ease,opacity .16s ease,padding .22s ease;
+}
+
+body.sidebar-collapsed .sidebar-search{
+    max-height:0;
+    opacity:0;
+    padding-top:0;
+    padding-bottom:0;
+}
+
+.menu-section-header{
+    overflow:hidden;
+    max-height:44px;
+    opacity:1;
+    transition:color .2s ease,max-height .22s ease,opacity .16s ease,padding .22s ease;
+}
+
+body.sidebar-collapsed .menu-section-header{
+    max-height:0;
+    opacity:0;
+    padding-top:0;
+    padding-bottom:0;
+}
+
+/* Section grouping stops mattering once headers are hidden -- force
+   every section's items visible regardless of its collapsed state. */
+body.sidebar-collapsed .menu-section-items{
+    max-height:none !important;
+    padding-bottom:6px;
+}
+
+.menu-item{
+    transition:background .18s ease,color .18s ease,gap .22s ease,padding .22s ease,margin .22s ease;
+}
+
+body.sidebar-collapsed .menu-item{
+    justify-content:center;
+    margin:2px 14px;
+    padding:10px;
+    gap:0;
+}
+
+.menu-item .label{
+    max-width:170px;
+    overflow:hidden;
+    opacity:1;
+    transition:max-width .22s ease,opacity .16s ease;
+}
+
+body.sidebar-collapsed .menu-item .label{
+    max-width:0;
+    opacity:0;
+}
+
+body.sidebar-collapsed .menu-item.active::before{
+    left:-14px;
+}
+
+body.sidebar-collapsed .notif-dot{
+    top:4px;
+    right:18px;
+}
+
+.logout-container{
+    transition:padding .22s ease;
+}
+
+body.sidebar-collapsed .logout-container{
+    padding:14px 10px;
+}
+
+.logout-btn{
+    transition:background .2s ease,color .2s ease,border-color .2s ease,padding .22s ease,gap .22s ease;
+}
+
+body.sidebar-collapsed .logout-btn{
+    padding:11px 0;
+    gap:0;
+}
+
+.logout-btn span{
+    max-width:100px;
+    overflow:hidden;
+    white-space:nowrap;
+    opacity:1;
+    transition:max-width .22s ease,opacity .16s ease;
+}
+
+body.sidebar-collapsed .logout-btn span{
+    max-width:0;
+    opacity:0;
+}
+
+.language-picker{
+    overflow:hidden;
+    max-height:80px;
+    opacity:1;
+    transition:max-height .22s ease,opacity .16s ease,margin .22s ease;
+}
+
+body.sidebar-collapsed .language-picker{
+    max-height:0;
+    opacity:0;
+    margin:0;
+}
+
+.sidebar-footer{
+    overflow:hidden;
+    max-height:50px;
+    opacity:1;
+    transition:max-height .22s ease,opacity .16s ease,padding .22s ease;
+}
+
+body.sidebar-collapsed .sidebar-footer{
+    max-height:0;
+    opacity:0;
+    padding-top:0;
+    padding-bottom:0;
+}
+
+/* The mobile drawer (below) already handles narrow viewports as a
+   full-width overlay -- the icon rail makes no sense there, so the
+   toggle hides and any collapsed state is neutralized (no transition
+   needed here, since the mobile drawer's own open/close transition
+   already governs how the sidebar moves at this width). */
+@media (max-width:480px){
+    .sidebar-collapse-toggle{ display:none !important; }
+    body.sidebar-collapsed .sidebar{ width:min(86vw,320px) !important; }
+    body.sidebar-collapsed .main-content{ margin-left:0 !important; }
+}
+
+/* ============================================================
+   SINGLE mobile breakpoint at 480px.
+   Previously there were TWO breakpoints (820px and 480px), and the
+   820px one used width:min(92vw,340px) — WIDER than the desktop
+   258px. That's what caused the sidebar to look "longer/spread out"
+   any time the viewport fell between 480px and 820px (e.g. 684px):
+   it wasn't a bug in the cascade, the rule was doing exactly what it
+   said, it just wasn't what was wanted. Collapsing to one breakpoint
+   removes that in-between zone entirely — the sidebar is now a flat
+   258px (via !important above) on anything 480px and wider, full
+   stop, and only becomes the slide-out drawer below 480px.
+   ============================================================ */
+@media (max-width: 480px){
+    .sidebar{
+        width:min(86vw,320px) !important;
+        max-width:min(86vw,320px) !important;
+        transform:translateX(-100%);
+        transition:transform .22s ease;
+        z-index:2500;
+    }
+    body.sidebar-open .sidebar{ transform:translateX(0); }
+    body.sidebar-open{ overflow:hidden; }
+    .sidebar-toggle{ display:flex; }
+    .main-content{ margin-left:0 !important; padding-top:64px !important; }
+}
+.menu-item{
+    position:relative; /* already true, just confirming */
+}
+
+/* Links that are revealed by JS only for specific accounts (e.g. User
+   Management) carry the [hidden] attribute. Without this rule the
+   display:flex on .menu-item would override it and the link would show. */
+.menu-item[hidden]{
+    display:none;
+}
+
+.notif-dot{
+    display:none;
+    position:absolute;
+    top:6px;
+    right:10px;
+    min-width:8px;
+    height:8px;
+    padding:0;
+    border-radius:50%;
+    background:#ef4444;
+    box-shadow:0 0 0 2px var(--sidebar-bg-top);
+    color:#fff;
+    font-size:9.5px;
+    font-weight:700;
+    line-height:1;
+    align-items:center;
+    justify-content:center;
+}
+
+/* When it's carrying a number (1+ pending items) it grows into a
+   small pill instead of staying a bare dot, so the count is legible. */
+.notif-dot.has-count{
+    display:flex;
+    min-width:15px;
+    height:15px;
+    padding:0 4px;
+    border-radius:8px;
+    top:5px;
+    right:8px;
+}
+
+/* ============================================================
+   SIDEBAR MENU HOVER SUMMARY PANEL
+   Floating card shown next to a menu item on hover, describing
+   what that page does. Positioned via JS (position:fixed) because
+   .sidebar has overflow-y:auto, which forces overflow-x to compute
+   as "auto" too (per the CSS spec) -- an absolutely-positioned
+   child spilling past the sidebar's right edge would get clipped
+   instead of floating over the page content. Hidden entirely on
+   mobile, since the sidebar becomes a full-width drawer there.
+   ============================================================ */
+.sidebar-hover-panel{
+    position:fixed;
+    z-index:3500;
+    width:260px;
+    background:#101a30;
+    border:1px solid rgba(148,163,184,.15);
+    border-radius:10px;
+    padding:14px 16px;
+    box-shadow:0 12px 32px rgba(0,0,0,.5);
+    opacity:0;
+    transform:translateY(-50%) translateX(-6px);
+    pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+}
+
+.sidebar-hover-panel.visible{
+    opacity:1;
+    transform:translateY(-50%) translateX(0);
+    pointer-events:auto;
+}
+
+.sidebar-hover-panel-title{
+    color:var(--sidebar-text-strong);
+    font-size:12.5px;
+    font-weight:700;
+    margin-bottom:6px;
+    letter-spacing:.2px;
+}
+
+.sidebar-hover-panel-body{
+    color:var(--sidebar-text);
+    font-size:12px;
+    line-height:1.55;
+}
+
+@media (max-width: 480px){
+    .sidebar-hover-panel{ display:none !important; }
+}
+
+/* ============================================================
+   UX ADDITIONS (clarity, precision, accessibility)
+   Keep this block last so it can override earlier rules.
+   ============================================================ */
+
+/* Visible keyboard focus everywhere in the sidebar */
+.menu-item:focus-visible,
+.menu-section-header:focus-visible,
+.logout-btn:focus-visible,
+.sidebar-collapse-toggle:focus-visible,
+.sidebar-toggle:focus-visible,
+.sidebar-close:focus-visible,
+.rail-search-btn:focus-visible,
+.sidebar-search-clear:focus-visible,
+.sidebar-help-btn:focus-visible,
+.sm-btn:focus-visible{
+    outline:2px solid var(--sidebar-accent);
+    outline-offset:2px;
+}
+
+/* Label + short description (description only shows on mobile, where
+   there is no hover panel) */
+.menu-item .label-wrap{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+}
+.menu-item .label-wrap .label{ flex:none; }
+.menu-item .desc{
+    display:none;
+    font-size:11.5px;
+    font-weight:400;
+    color:var(--sidebar-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+body.sidebar-collapsed .menu-item .label-wrap{ flex:none; }
+
+/* Search: shortcut hint, clear button, match highlight */
+.sidebar-search input{ padding-right:48px; }
+.sidebar-search kbd{
+    position:absolute;
+    right:30px;
+    top:50%;
+    transform:translateY(-50%);
+    font:inherit;
+    font-size:11px;
+    line-height:1;
+    color:var(--sidebar-muted);
+    border:1px solid rgba(148,163,184,.25);
+    border-radius:5px;
+    padding:3px 6px;
+    pointer-events:none;
+}
+.sidebar-search.has-value kbd{ display:none; }
+.sidebar-search-clear{
+    display:none;
+    position:absolute;
+    right:24px;
+    top:50%;
+    transform:translateY(-50%);
+    width:24px;
+    height:24px;
+    padding:0;
+    border:none;
+    border-radius:6px;
+    background:transparent;
+    color:var(--sidebar-muted);
+    cursor:pointer;
+    align-items:center;
+    justify-content:center;
+}
+.sidebar-search.has-value .sidebar-search-clear{ display:flex; }
+.sidebar-search-clear:hover{ color:var(--sidebar-text-strong); background:var(--sidebar-hover); }
+.sidebar-search-clear svg{ position:static; transform:none; width:13px; height:13px; }
+.menu-item .label mark{
+    background:transparent;
+    color:#8fb0ff;
+    font-weight:700;
+    text-decoration:underline;
+    text-underline-offset:3px;
+}
+@media (hover:none){ .sidebar-search kbd{ display:none; } }
+
+/* Search icon button shown in the collapsed icon rail */
+.rail-search-btn{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    width:48px;
+    height:40px;
+    margin:12px auto 4px;
+    border:1px solid rgba(148,163,184,.16);
+    border-radius:9px;
+    background:#0f1830;
+    color:var(--sidebar-text);
+    cursor:pointer;
+}
+.rail-search-btn svg{ width:18px; height:18px; }
+.rail-search-btn:hover{ color:var(--sidebar-text-strong); background:#14203c; }
+body.sidebar-collapsed .rail-search-btn{ display:flex; }
+
+/* Profile: access line, loading pulse, session-expired notice */
+.user-profile-access{
+    margin-top:6px;
+    font-size:11px;
+    color:var(--sidebar-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    cursor:help;
+}
+.user-profile-access[hidden]{ display:none; }
+.session-notice{
+    display:block;
+    margin-top:6px;
+    font-size:11.5px;
+    font-weight:600;
+    color:#fbbf24;
+    text-decoration:underline;
+}
+.session-notice[hidden]{ display:none; }
+.user-profile.is-loading .user-profile-name,
+.user-profile.is-loading .badge-label{
+    animation:sidebarPulse 1.2s ease-in-out infinite;
+}
+@keyframes sidebarPulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+/* Section headers: title + pending badge (shown only while collapsed) */
+.section-heading{ display:inline-flex; align-items:center; gap:8px; min-width:0; }
+.section-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:16px;
+    height:16px;
+    padding:0 5px;
+    border-radius:8px;
+    background:#ef4444;
+    color:#fff;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:0;
+    line-height:1;
+}
+.section-badge[hidden]{ display:none; }
+.section-badge.is-error{ background:#64748b; }
+.menu-section:not(.collapsed) .section-badge{ display:none; }
+
+/* Sections with a single page are just a label -- nothing to collapse */
+.section-static .menu-section-header{ cursor:default; pointer-events:none; }
+.section-static .chevron{ display:none; }
+
+/* Approval badge: error state (grey "!") */
+.notif-dot.is-error{ background:#64748b; }
+
+/* Hover panel: live status line (e.g. pending approvals) */
+.sidebar-hover-panel-extra{
+    margin-top:10px;
+    padding-top:8px;
+    border-top:1px solid rgba(148,163,184,.15);
+    color:#fca5a5;
+    font-size:12px;
+    font-weight:600;
+}
+.sidebar-hover-panel-extra[hidden]{ display:none; }
+
+/* Logout is a real <button> now */
+.logout-btn{ width:100%; cursor:pointer; font-family:inherit; }
+
+/* Footer with help button */
+.sidebar-footer{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    max-height:90px;
+}
+.sidebar-help-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:none;
+    border:1px solid rgba(148,163,184,.2);
+    border-radius:20px;
+    color:var(--sidebar-text);
+    font:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:5px 12px;
+    cursor:pointer;
+}
+.sidebar-help-btn:hover{ color:var(--sidebar-text-strong); background:var(--sidebar-hover); }
+
+/* Mobile drawer: close button, no hamburger overlap, short descriptions */
+.sidebar-close{
+    display:none;
+    margin-left:auto;
+    width:36px;
+    height:36px;
+    flex-shrink:0;
+    align-items:center;
+    justify-content:center;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;
+    background:rgba(255,255,255,.04);
+    color:var(--sidebar-text-strong);
+    cursor:pointer;
+}
+.sidebar-close svg{ width:18px; height:18px; }
+@media (max-width:480px){
+    .sidebar-close{ display:flex; }
+    body.sidebar-open .sidebar-toggle{ display:none; }
+    .menu-item .desc{ display:block; }
+    .menu-item{ min-height:48px; }
+}
+
+/* Confirmation / help dialog (lives outside .sidebar so position:fixed
+   isn't affected by the mobile drawer's transform) */
+.sidebar-modal{
+    position:fixed;
+    inset:0;
+    z-index:4000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    font-family:Inter,"Segoe UI",sans-serif;
+}
+.sidebar-modal[hidden]{ display:none; }
+.sidebar-modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); }
+.sidebar-modal-dialog{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    max-height:90vh;
+    overflow:auto;
+    background:#101a30;
+    border:1px solid rgba(148,163,184,.18);
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 20px 50px rgba(0,0,0,.55);
+    color:var(--sidebar-text);
+}
+#sidebarModalTitle{ margin:0 0 10px; font-size:16px; font-weight:700; color:var(--sidebar-text-strong); }
+.sidebar-modal-body{ font-size:13.5px; line-height:1.55; }
+.sidebar-modal-body dl{ margin:0; }
+.sidebar-modal-body dt{ margin-top:10px; font-size:13px; font-weight:700; color:var(--sidebar-text-strong); }
+.sidebar-modal-body dd{ margin:2px 0 0; }
+.sidebar-modal-body p{ margin:12px 0 0; color:var(--sidebar-muted); }
+.sidebar-modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+.sm-btn{
+    padding:9px 16px;
+    border-radius:8px;
+    border:1px solid rgba(148,163,184,.22);
+    background:#131d33;
+    color:var(--sidebar-text-strong);
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+}
+.sm-btn:hover{ background:#1a2540; }
+.sm-btn[hidden]{ display:none; }
+.sm-btn-primary{ background:var(--sidebar-accent-dim); border-color:transparent; }
+.sm-btn-primary:hover{ background:var(--sidebar-accent); }
+.sm-btn-danger{ background:#b42323; border-color:transparent; }
+.sm-btn-danger:hover{ background:#d02f2f; }
+
+/* Respect reduced-motion preferences (scoped to the sidebar) */
+@media (prefers-reduced-motion: reduce){
+    .sidebar, .sidebar *, .sidebar-collapse-toggle, .sidebar-hover-panel,
+    .sidebar-backdrop, .sidebar-modal *, .main-content{
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+    }
+}
+</style>
+
+<button class="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+</button>
+
+<div class="sidebar-backdrop"></div>
+
+<div class="sidebar">
+
+    <button class="sidebar-collapse-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+
+    <div class="logo">
+
+        <div class="logo-mark" id="logoMark">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Company Logo" onerror="this.parentElement.classList.add('logo-fallback')">
+        </div>
+
+        <div class="logo-text">
+            <div class="logo-title">Time Hub Network</div>
+            <div class="logo-subtitle">Workforce Console</div>
+        </div>
+
+        <button class="sidebar-close" type="button" aria-label="Close navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+
+    </div>
+
+    <div class="user-profile is-loading" id="sidebarUserProfile">
+        <div class="user-avatar" id="sidebarUserAvatar">—</div>
+        <div class="user-profile-text">
+            <div class="user-profile-name" id="sidebarUserName">Loading…</div>
+            <div class="user-profile-badge">
+                <span class="badge-dot"></span>
+                <span class="badge-label" id="sidebarUserDept">—</span>
+            </div>
+            <div class="user-profile-access" id="sidebarUserAccess" hidden
+                 title="Your access level decides which pages and employee records you can see."></div>
+            <a href="/logout" class="session-notice" id="sidebarSessionNotice" hidden>Session expired. Log in again</a>
+        </div>
+    </div>
+
+    <div class="sidebar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="sidebarSearchInput" placeholder="Search pages…" aria-label="Search pages (press / to focus)" autocomplete="off">
+        <kbd aria-hidden="true">/</kbd>
+        <button class="sidebar-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <button class="rail-search-btn" id="railSearchBtn" type="button" aria-label="Search pages" title="Search pages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+
+    <div class="sidebar-search-empty" id="sidebarSearchEmpty" role="status" aria-live="polite">No matching pages found.</div>
+
+    <div class="menu-section">
+
+        <button class="menu-section-header" type="button" data-section="overview">
+            <span class="section-heading"><span class="section-title">Overview</span></span>
+            <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+
+        <div class="menu-section-items">
+
+            <a href="/maindashboard" class="menu-item" id="menu-maindashboard"
+               data-tooltip="Dashboard||A company-wide attendance summary with Absent, Late and Present counts, plus the latest time-in records across all affiliates.">
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
+                <span class="label-wrap"><span class="label">Dashboard</span><span class="desc">Today's attendance summary</span></span>
+            </a>
+
+        </div>
+
+    </div>
+
+    {% if session.get('role') == 'Admin' %}
+    <div class="menu-section">
+
+        <button class="menu-section-header" type="button" data-section="system-setup">
+            <span class="section-heading"><span class="section-title">System Setup</span></span>
+            <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+
+        <div class="menu-section-items">
+            <a href="/scanner_management" class="menu-item" id="menu-scanners"
+               data-tooltip="Scanner Management||Configure and manage the time-in/time-out scanner devices used across affiliates.">
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8" cy="9" r="1"></circle><circle cx="8" cy="15" r="1"></circle><line x1="12" y1="9" x2="17" y2="9"></line><line x1="12" y1="15" x2="17" y2="15"></line></svg></span>
+                <span class="label-wrap"><span class="label">Scanner Management</span><span class="desc">Time-in/out devices</span></span>
+            </a>
+
+            <!-- Hidden until sidebar.js confirms via /api/me that this account is a
+                 global administrator (see isUserManager in sidebar.js). -->
+            <a href="/user_management" class="menu-item" id="menu-user-management" hidden
+               data-tooltip="User Management||Create new user accounts and delete existing ones. Available to global administrators in the Administration department only.">
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg></span>
+                <span class="label-wrap"><span class="label">User Management</span><span class="desc">Create and delete accounts</span></span>
+            </a>
+        </div>
+
+    </div>
+    {% endif %}
+
+    {% if session.get('access_level') != 'LINE' or session.get('role') == 'Admin' %}
+    <div class="menu-section">
+
+        <button class="menu-section-header" type="button" data-section="workforce">
+            <span class="section-heading"><span class="section-title">Workforce</span></span>
+            <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+
+        <div class="menu-section-items">
+
+            <a href="/dashboard" class="menu-item" id="menu-dashboard"
+               data-tooltip="Manpower Upload||Upload employee attendance records from Excel files, search employees, manage manpower, and see which employees are missing per production line.">
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a3.99 3.99 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+                <span class="label-wrap"><span class="label">Manpower Upload</span><span class="desc">Upload attendance, manage manpower</span></span>
+            </a>
+
+            <a href="/employee_management" class="menu-item" id="menu-employee"
+               data-tooltip="Employee Management||View the full employee list, filterable by affiliate. Add employees, delete records, and mark employees as No Clear or No Work.">
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+                <span class="label-wrap"><span class="label">Employee Management</span><span class="desc">Employee records</span></span>
+            </a>
+
+        </div>
+
+    </div>
+    {% endif %}
+
+    <div class="menu-section">
+
+        <button class="menu-section-header" type="button" data-section="time-tracking">
+            <span class="section-heading"><span class="section-title">Time Tracking</span><span class="section-badge" id="timeTrackingBadge" hidden></span></span>
+            <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+
+        <div class="menu-section-items">
+
+        <a href="/attendance-logs" class="menu-item" id="menu-attendance-logs"
+           data-tooltip="Attendance Logs||Each employee's daily time-in and time-out history. Download logs for a date range, export Absent, Present, Late, On Leave and No Work reports, and request corrections to wrong entries (subject to HR approval).">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8.5" y1="13" x2="15.5" y2="13"></line><line x1="8.5" y1="17" x2="15.5" y2="17"></line></svg></span>
+            <span class="label-wrap"><span class="label">Attendance Logs</span><span class="desc">History, exports, corrections</span></span>
+            <span class="notif-dot" id="attendanceNotifDot" role="status" aria-live="polite"></span>
+        </a>
+
+        </div>
+
+    </div>
+
+    <div class="logout-container">
+
+        <button type="button" class="sidebar-theme-toggle" data-theme-toggle title="Toggle dark mode">🌙</button>
+
+        <label class="language-picker">
+            <span>Language</span>
+            <select data-language-select aria-label="Language" onchange="window.i18n && window.i18n.setLanguage(this.value)">
+                <option value="en">English</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="tl">Tagalog</option>
+            </select>
+        </label>
+
+        <button type="button" class="logout-btn" id="logoutBtn" title="Logout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>Logout</span>
+        </button>
+
+    </div>
+
+    <div class="sidebar-footer">
+        <button type="button" class="sidebar-help-btn" id="sidebarHelpBtn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Help &amp; shortcuts
+        </button>
+        <span>Version 1.0 · Internal Tool</span>
+    </div>
+
+</div>
+
+<style>
+.language-picker{display:block;margin:0 0 10px;padding:0 3px;color:var(--sidebar-text);font-size:11px;font-weight:700;letter-spacing:.45px;text-transform:uppercase}
+.language-picker select{width:100%;margin-top:6px;padding:8px 9px;border:1px solid rgba(148,163,184,.2);border-radius:7px;background:#131d33;color:var(--sidebar-text-strong);font:inherit;text-transform:none;cursor:pointer}
+</style>
+
+<!-- Floating hover-summary panel, shared by every .menu-item[data-tooltip].
+     Positioned dynamically by sidebar.js on mouseenter. -->
+<div class="sidebar-hover-panel" id="sidebarHoverPanel">
+    <div class="sidebar-hover-panel-title" id="sidebarHoverPanelTitle"></div>
+    <div class="sidebar-hover-panel-body" id="sidebarHoverPanelBody"></div>
+    <div class="sidebar-hover-panel-extra" id="sidebarHoverPanelExtra" hidden></div>
+</div>
+
+<!-- Shared dialog for logout confirmation and help. Kept outside .sidebar. -->
+<div class="sidebar-modal" id="sidebarModal" hidden>
+    <div class="sidebar-modal-backdrop" id="sidebarModalBackdrop"></div>
+    <div class="sidebar-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sidebarModalTitle" aria-describedby="sidebarModalBody">
+        <h2 id="sidebarModalTitle"></h2>
+        <div class="sidebar-modal-body" id="sidebarModalBody"></div>
+        <div class="sidebar-modal-actions">
+            <button type="button" class="sm-btn" id="sidebarModalCancel">Cancel</button>
+            <button type="button" class="sm-btn sm-btn-primary" id="sidebarModalConfirm">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+
+    const routes = {
+        "/maindashboard": "menu-maindashboard",
+        "/dashboard": "menu-dashboard",
+        "/employee_management": "menu-employee",
+        "/attendance-logs": "menu-attendance-logs",
+        "/scanner_management": "menu-scanners",
+        "/user_management": "menu-user-management"
+    };
+
+    // Highlight the current page. Longest-prefix match, so sub-pages like
+    // /employee_management/123 still highlight "Employee Management".
+    const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+    let activeId = null;
+    let bestLen = -1;
+    Object.keys(routes).forEach(route => {
+        const matches = currentPath === route || currentPath.startsWith(route + "/");
+        if (matches && route.length > bestLen) {
+            activeId = routes[route];
+            bestLen = route.length;
+        }
+    });
+    const activeEl = activeId ? document.getElementById(activeId) : null;
+
+    if (activeEl) {
+        activeEl.classList.add("active");
+        activeEl.setAttribute("aria-current", "page");
+    }
+
+    // Restore the desktop icon-rail state before paint (avoids a flash of
+    // the wrong width). Same rule as shouldRailCollapse() in sidebar.js:
+    //   - never on mobile (the drawer has its own layout)
+    //   - an explicit user choice always wins
+    //   - otherwise auto-collapse on narrow screens (481-900px)
+    const isMobile = window.matchMedia("(max-width: 480px)").matches;
+    let pref = null;
+    try {
+        const v = localStorage.getItem("sidebar-collapsed");
+        pref = v === "true" ? true : (v === "false" ? false : null);
+    } catch (e) {
+        // Storage unavailable -- fall back to auto behaviour.
+    }
+    const isCollapsed = !isMobile && (pref !== null ? pref : window.innerWidth <= 900);
+    if (isCollapsed) {
+        document.body.classList.add("sidebar-collapsed");
+    }
+    const collapseToggle = document.querySelector(".sidebar-collapse-toggle");
+    if (collapseToggle) {
+        const label = isCollapsed ? "Expand sidebar" : "Collapse sidebar";
+        collapseToggle.setAttribute("aria-expanded", String(!isCollapsed));
+        collapseToggle.setAttribute("aria-label", label);
+        collapseToggle.title = label;
+    }
+
+    document.querySelectorAll(".menu-section").forEach((section, index) => {
+
+        const header = section.querySelector(".menu-section-header");
+        const itemsEl = section.querySelector(".menu-section-items");
+        const containsActive = activeEl && section.contains(activeEl);
+        // Saved by section NAME (not index), so conditional sections
+        // (Admin-only, hidden for LINE users) can't shift each other's state.
+        const sectionId = (header && header.dataset.section) || String(index);
+        const storageKey = `sidebar-section-${sectionId}`;
+
+        // A section with one page is just a label: nothing worth collapsing.
+        if (section.querySelectorAll(".menu-item").length <= 1) {
+            section.classList.add("section-static");
+            if (header) {
+                header.setAttribute("tabindex", "-1");
+                header.setAttribute("aria-disabled", "true");
+                header.removeAttribute("aria-expanded");
+            }
+            return;
+        }
+
+        let savedState = null;
+        try {
+            savedState = localStorage.getItem(storageKey);
+        } catch (e) {
+            // Storage unavailable -- just fall back to expanded.
+        }
+
+        if (savedState === "collapsed" && !containsActive) {
+            section.classList.add("collapsed");
+        }
+
+        const hiddenByCollapse = section.classList.contains("collapsed") && !isCollapsed;
+        if (itemsEl) itemsEl.toggleAttribute("inert", hiddenByCollapse);
+
+        if (header) {
+            header.setAttribute("aria-expanded", String(!section.classList.contains("collapsed")));
+        }
+
+    });
+
+})();
+</script>
+
+<script defer src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/sidebar.js') }}"></script>

@@ -1,0 +1,77 @@
+/*
+ * THN visual refresh — intentionally presentation-only.
+ * Remove this file's <link> tags from the templates to restore the prior UI.
+ */
+:root{
+  --thn-brand:#2563eb;
+  --thn-brand-dark:#1d4ed8;
+  --thn-ink:#17213a;
+  --thn-muted:#64748b;
+  --thn-border:rgba(148,163,184,.25);
+  --thn-surface:#fff;
+  --thn-shadow:0 12px 32px rgba(15,23,42,.08);
+  --thn-radius:16px;
+}
+
+html{scroll-behavior:smooth;}
+body:not(.sidebar-open){background:#f4f7fb;}
+
+/* A calm, consistent surface treatment across dashboard cards and panels. */
+.main-content{isolation:isolate;}
+.main-content :is(.card,.chart-card,.stat-card,.header,.container > .main-layout > *,
+  .table-card,.form-card,.history-modal-content,.edit-modal-content,.modal-content){
+  border-color:var(--thn-border);
+}
+.main-content :is(.card,.chart-card,.table-card,.form-card){
+  box-shadow:var(--thn-shadow);
+}
+.main-content :is(.card,.chart-card,.table-card,.form-card,.header){
+  border-radius:var(--thn-radius);
+}
+
+/* Tables stay dense for attendance work but gain clearer row hierarchy. */
+.main-content table{border-collapse:separate;border-spacing:0;}
+.main-content :is(.attendance-table,table) thead th{
+  background:#f8fafc !important;
+  color:#475569;
+  font-size:11px;
+  letter-spacing:.055em;
+}
+.main-content :is(.attendance-table,table) tbody tr{transition:background .15s ease;}
+.main-content :is(.attendance-table,table) tbody tr:hover{background:rgba(37,99,235,.035);}
+
+/* Shared control polish, retaining each page's existing colour/size system. */
+.main-content :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+  border-color:#cbd5e1;
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+.main-content :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea):focus{
+  border-color:var(--thn-brand) !important;
+  box-shadow:0 0 0 3px rgba(37,99,235,.13) !important;
+}
+.main-content button{transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;}
+.main-content button:not(:disabled):active{transform:translateY(1px);}
+.main-content :is(.btn-primary,.page-btn,.request-action-btn,#saveAttendance,#exportExcelBtn,#exportRangeBtn){
+  box-shadow:0 4px 10px rgba(15,23,42,.08);
+}
+
+/* Status badges read more like small system indicators than flat labels. */
+.main-content :is(.employee-status,.badge,.stat-pill){
+  box-shadow:inset 0 0 0 1px rgba(15,23,42,.04);
+}
+.main-content .stat-pill-btn:hover{transform:translateY(-1px);box-shadow:0 7px 15px rgba(15,23,42,.1);}
+
+/* Attendance Logs: clear card separation for large table workspaces. */
+.main-content .filters-card,.main-content .table-section,.main-content .attendance-table-wrap{
+  border-radius:14px;
+}
+.main-content .history-export-row{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;}
+
+/* Modal elevation and keyboard accessibility. */
+.modal-content{box-shadow:0 24px 70px rgba(15,23,42,.28) !important;}
+.modal-close-x:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid rgba(37,99,235,.38);outline-offset:2px;}
+
+@media (max-width:480px){
+  .main-content :is(.card,.chart-card,.table-card,.form-card,.header){border-radius:12px;}
+  .main-content{padding-bottom:28px;}
+}

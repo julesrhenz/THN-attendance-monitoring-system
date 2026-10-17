@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Hub Network — Attendance Monitoring System</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root{
+  --navy: #0a1628;
+  --navy2: #0f2040;
+  --navy3: #142a4d;
+  --blue: #1a56db;
+  --blue2: #2563eb;
+  --accent: #38bdf8;
+  --amber: #fbbf24;
+  --off: #f0f4ff;
+  --muted: #8fa3c0;
+  --border: rgba(255,255,255,0.08);
+
+  --display: 'Space Grotesk', sans-serif;
+  --body: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html{ scroll-behavior: smooth; scrollbar-gutter: stable; }
+
+body{
+  font-family: var(--body);
+  background: var(--navy);
+  color: var(--off);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior: auto; }
+  *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+/* ================= BACKGROUND ================= */
+.bg-grid{
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.orb{ position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; }
+.orb-1{ width: 460px; height: 460px; background: radial-gradient(circle, rgba(26,86,219,0.3), transparent 70%); top: -140px; left: -140px; }
+.orb-2{ width: 380px; height: 380px; background: radial-gradient(circle, rgba(56,189,248,0.16), transparent 70%); bottom: -120px; right: -80px; }
+
+/* ================= NAVBAR ================= */
+.navbar{
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px clamp(20px, 5vw, 64px);
+  background: rgba(10,22,40,0.7);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-brand{ display: flex; align-items: center; gap: 11px; }
+
+.nav-mark{
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--navy);
+}
+.nav-mark img{
+  width: 100%; height: 100%; object-fit: contain;
+}
+
+.nav-name{ font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+.nav-name span{ color: var(--accent); }
+
+.nav-links{ display: flex; align-items: center; gap: 6px; }
+.nav-language-select{border:1px solid rgba(255,255,255,.16);border-radius:7px;background:rgba(255,255,255,.06);color:var(--off);padding:7px 8px;font:600 12px inherit;cursor:pointer;}
+.nav-language-select option{background:#101a30;color:#fff;}
+
+.nav-link{
+  background: none; border: none; color: var(--muted);
+  font-family: var(--body); font-size: 13.5px; font-weight: 600;
+  padding: 9px 16px; border-radius: 8px; cursor: pointer;
+  transition: color .2s, background .2s;
+}
+.nav-link:hover{ color: var(--off); background: rgba(255,255,255,0.05); }
+
+.nav-link.cta{
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: white; margin-left: 6px;
+}
+.nav-link.cta:hover{ background: linear-gradient(135deg, var(--blue2), var(--blue)); box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+
+.nav-toggle{ display: none; }
+
+/* ================= HERO ================= */
+.hero{
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 140px clamp(20px, 6vw, 80px) 80px;
+}
+
+.hero-inner{
+  display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 56px;
+  align-items: center; max-width: 1180px; margin: 0 auto; width: 100%;
+}
+
+.eyebrow{
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--accent);
+  border: 1px solid rgba(56,189,248,0.3); background: rgba(56,189,248,0.08);
+  padding: 6px 12px; border-radius: 20px; margin-bottom: 22px;
+}
+.eyebrow .dot{ width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 1.8s ease-in-out infinite; }
+
+@keyframes pulse{
+  0%, 100%{ opacity: 1; box-shadow: 0 0 0 0 rgba(251,191,36,0.5); }
+  50%{ opacity: .6; box-shadow: 0 0 0 6px rgba(251,191,36,0); }
+}
+
+.hero h1{
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(34px, 4.6vw, 54px); line-height: 1.08; letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.hero h1 .hl{
+  background: linear-gradient(90deg, var(--accent), #818cf8);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.hero-desc{ font-size: 15.5px; color: var(--muted); line-height: 1.75; max-width: 460px; margin-bottom: 32px; }
+
+.hero-actions{ display: flex; gap: 12px; flex-wrap: wrap; }
+
+.btn-primary{
+  padding: 13px 26px; border-radius: 11px; border: none;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: white; font-family: var(--body); font-weight: 700; font-size: 14px;
+  cursor: pointer; transition: transform .2s, box-shadow .2s;
+}
+.btn-primary:hover{ transform: translateY(-2px); box-shadow: 0 12px 26px rgba(37,99,235,.35); }
+
+.btn-secondary{
+  padding: 13px 26px; border-radius: 11px;
+  border: 1.5px solid var(--border); background: rgba(255,255,255,0.03);
+  color: var(--off); font-family: var(--body); font-weight: 600; font-size: 14px;
+  cursor: pointer; transition: border-color .2s, background .2s;
+}
+.btn-secondary:hover{ border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.06); }
+
+/* ---- Signature element: live punch-clock ---- */
+.clock-card{
+  background: linear-gradient(160deg, var(--navy3), var(--navy2));
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 30px 28px; box-shadow: 0 30px 70px -20px rgba(0,0,0,0.5);
+  position: relative; overflow: hidden;
+}
+.clock-card::before{
+  content: ""; position: absolute; top: -40%; right: -30%;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(56,189,248,0.14), transparent 70%);
+}
+
+.clock-label{
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+
+.shift-status{
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+}
+.shift-status.day{ background: rgba(251,191,36,0.14); color: var(--amber); border: 1px solid rgba(251,191,36,0.3); }
+.shift-status.night{ background: rgba(129,140,248,0.14); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.3); }
+.shift-status .sdot{ width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+.clock-time{
+  font-family: var(--mono); font-weight: 700; letter-spacing: 1px;
+  font-size: clamp(38px, 5vw, 50px); color: var(--off); line-height: 1;
+  margin-bottom: 6px; font-variant-numeric: tabular-nums;
+}
+.clock-date{ font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 22px; }
+
+.clock-divider{ height: 1px; background: var(--border); margin-bottom: 20px; }
+
+.clock-meta{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.meta-item .mnum{ font-family: var(--mono); font-size: 19px; font-weight: 700; color: var(--accent); }
+.meta-item .mlbl{ font-size: 10.5px; color: var(--muted); margin-top: 2px; letter-spacing: .3px; }
+
+/* ================= ABOUT ================= */
+.about{ position: relative; z-index: 1; padding: 100px clamp(20px, 6vw, 80px); }
+.about-inner{ max-width: 1180px; margin: 0 auto; }
+
+.section-eyebrow{
+  font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+  letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+}
+
+.about h2{
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.01em;
+  margin-bottom: 14px; max-width: 640px;
+}
+
+.about-sub{ color: var(--muted); font-size: 15px; max-width: 560px; line-height: 1.7; margin-bottom: 52px; }
+
+.feature-grid{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+.feature-card{
+  background: rgba(255,255,255,0.035); border: 1px solid var(--border);
+  border-radius: 16px; padding: 26px 22px; transition: transform .25s, border-color .25s, background .25s;
+}
+.feature-card:hover{ transform: translateY(-4px); border-color: rgba(56,189,248,0.3); background: rgba(255,255,255,0.05); }
+
+.feature-icon{
+  width: 42px; height: 42px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(26,86,219,0.25), rgba(56,189,248,0.18));
+  border: 1px solid rgba(56,189,248,0.2);
+  font-size: 18px; margin-bottom: 18px;
+}
+
+.feature-card h3{ font-family: var(--display); font-size: 16px; font-weight: 700; margin-bottom: 9px; }
+.feature-card p{ font-size: 13px; color: var(--muted); line-height: 1.65; }
+.feature-tag{
+  font-family: var(--mono); font-size: 10px; color: var(--accent);
+  letter-spacing: .6px; text-transform: uppercase; margin-top: 14px; display: block;
+}
+
+/* ================= FLOW STEPS ================= */
+.flow-grid{
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  counter-reset: flow;
+}
+
+.flow-step{
+  position: relative;
+  background: rgba(255,255,255,0.035); border: 1px solid var(--border);
+  border-radius: 16px; padding: 26px 22px 22px;
+  transition: transform .25s, border-color .25s, background .25s;
+}
+.flow-step:hover{ transform: translateY(-4px); border-color: rgba(56,189,248,0.3); background: rgba(255,255,255,0.05); }
+
+.flow-num{
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--accent); letter-spacing: 1px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.flow-num::before{
+  content: attr(data-step);
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(26,86,219,0.35), rgba(56,189,248,0.22));
+  border: 1px solid rgba(56,189,248,0.3); color: var(--off); font-size: 11px;
+}
+
+.flow-step h3{ font-family: var(--display); font-size: 15.5px; font-weight: 700; margin-bottom: 8px; }
+.flow-step p{ font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+.flow-step .feature-tag{ margin-top: 14px; }
+
+/* Connector arrow between steps, desktop only */
+.flow-step:not(:nth-child(3n)):not(:last-child)::after{
+  content: "→"; position: absolute; top: 50%; right: -26px;
+  transform: translateY(-50%); font-size: 18px; color: rgba(143,163,192,0.3);
+}
+
+@media (max-width: 900px){
+  .flow-grid{ grid-template-columns: repeat(2, 1fr); }
+  .flow-step::after{ content: none !important; }
+  .instructions-layout{ grid-template-columns:1fr; }
+}
+@media (max-width: 640px){
+  .flow-grid{ grid-template-columns: 1fr; }
+  .instructions{ padding-bottom:68px; }
+  .instructions-head{ display:block; }
+  .instructions-head h2{ margin-bottom:12px; }
+  .instruction-item{ padding:16px; }
+}
+
+/* ================= NEW USER WORK INSTRUCTIONS ================= */
+.instructions{ position:relative; z-index:1; padding:0 clamp(20px,6vw,80px) 100px; }
+.instructions-inner{ max-width:1180px; margin:0 auto; }
+.instructions-head{ display:flex; align-items:end; justify-content:space-between; gap:26px; margin-bottom:30px; }
+.instructions-head h2{ font-family:var(--display); font-size:clamp(25px,3vw,36px); line-height:1.15; max-width:640px; }
+.instructions-head p{ color:var(--muted); font-size:14px; line-height:1.7; max-width:420px; }
+.instructions-layout{ display:grid; grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr); gap:20px; }
+.instruction-list,.role-guide{ background:rgba(255,255,255,.035); border:1px solid var(--border); border-radius:16px; }
+.instruction-list{ overflow:hidden; }
+.instruction-item{ display:grid; grid-template-columns:42px minmax(0,1fr); gap:14px; padding:19px 20px; border-bottom:1px solid var(--border); }
+.instruction-item:last-child{ border-bottom:0; }
+.instruction-step{ width:30px; height:30px; border-radius:9px; display:grid; place-items:center; background:linear-gradient(135deg,rgba(26,86,219,.36),rgba(56,189,248,.2)); border:1px solid rgba(56,189,248,.28); color:var(--off); font:700 12px var(--mono); }
+.instruction-item h3{ font:700 15px var(--display); margin:2px 0 5px; }
+.instruction-item p{ color:var(--muted); font-size:12.8px; line-height:1.65; }
+.role-guide{ padding:24px; }
+.role-guide h3{ font:700 17px var(--display); margin-bottom:8px; }
+.role-guide>p{ color:var(--muted); font-size:12.5px; line-height:1.6; margin-bottom:18px; }
+.role-row-guide{ padding:13px 0; border-top:1px solid var(--border); }
+.role-row-guide strong{ display:block; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--accent); margin-bottom:4px; }
+.role-row-guide span{ display:block; color:var(--muted); font-size:12.5px; line-height:1.55; }
+.instruction-note{ margin-top:20px; padding:14px 16px; border-left:3px solid var(--accent); border-radius:0 10px 10px 0; background:rgba(37,99,235,.09); color:#cbd5e1; font-size:12.5px; line-height:1.6; }
+.instruction-note strong{ color:var(--off); }
+
+/* ================= FOOTER ================= */
+.footer{
+  position: relative; z-index: 1; border-top: 1px solid var(--border);
+  padding: 26px clamp(20px, 6vw, 80px); text-align: center;
+  color: rgba(143,163,192,0.5); font-size: 12px;
+}
+
+/* ================= LOGIN MODAL ================= */
+/* No backdrop-filter here: blurring a page that repaints every second
+   (live clock, pulsing dots) makes the modal shimmer/glitch. */
+.modal-overlay{
+  display: flex; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(5,10,20,0.84);
+  align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .18s ease, visibility 0s linear .18s;
+  overscroll-behavior: contain;
+}
+.modal-overlay.open{
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transition: opacity .18s ease, visibility 0s;
+}
+body.modal-open{ overflow: hidden; }
+
+.modal-box{
+  width: 100%; max-width: 420px; background: #ffffff; color: var(--navy);
+  border-radius: 18px; padding: 36px 32px; position: relative;
+  box-shadow: 0 40px 90px rgba(0,0,0,0.5);
+  transition: transform .22s cubic-bezier(.16,1,.3,1), opacity .18s ease;
+  max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
+}
+.modal-overlay:not(.open) .modal-box{ transform: translateY(10px) scale(.97); opacity: 0; }
+
+@media (prefers-reduced-motion: reduce){
+  .modal-overlay, .modal-box{ transition: none !important; }
+}
+
+.modal-close{
+  position: absolute; top: 16px; right: 16px;
+  width: 30px; height: 30px; border-radius: 8px; border: none;
+  background: #f0f4ff; color: #64748b; font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s;
+}
+.modal-close:hover{ background: #fee2e2; color: #dc2626; }
+
+.modal-box h2{ font-family: var(--display); font-size: 21px; font-weight: 700; margin-bottom: 4px; }
+.modal-sub{ font-size: 12.5px; color: #8fa3c0; margin-bottom: 20px; }
+
+.modal-panel{ display: none; }
+.modal-panel.active{ display: block; }
+
+.alert{
+  padding: 10px 14px; border-radius: 9px;
+  font-size: 12px; font-weight: 600;
+  margin-bottom: 14px; display: none;
+}
+.alert.error{ background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.alert.success{ background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+.mfield{ margin-bottom: 15px; }
+.mfield label{
+  display: block; font-size: 10.5px; font-weight: 700; color: #475569;
+  letter-spacing: .6px; text-transform: uppercase; margin-bottom: 6px;
+}
+.mfield input[type="text"], .mfield input[type="password"], .mfield select{
+  width: 100%; padding: 11px 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  font-size: 13px; font-family: var(--body); color: var(--navy); background: #fafbff;
+  outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.mfield input:focus, .mfield select:focus{ border-color: var(--blue2); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); background: #fff; }
+.mfield select:disabled{ background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+.mfield-hint{ font-size: 11px; color: #94a3b8; margin-top: 5px; line-height: 1.5; }
+
+.mfield-remember{ display: flex; align-items: center; gap: 8px; margin: 4px 0 20px; }
+.mfield-remember input{ width: 15px; height: 15px; accent-color: var(--blue2); }
+.mfield-remember label{ font-size: 12.5px; color: #64748b; font-weight: 500; }
+
+.modal-submit{
+  width: 100%; padding: 13px; border: none; border-radius: 11px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2)); color: white;
+  font-family: var(--body); font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+}
+.modal-submit:hover{ transform: translateY(-1px); box-shadow: 0 10px 22px rgba(37,99,235,.3); }
+.modal-submit:disabled{ opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px){
+  .hero-inner{ grid-template-columns: 1fr; }
+  .feature-grid{ grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px){
+  .nav-links{
+    position: fixed; top: 62px; left: 0; right: 0;
+    flex-direction: column; align-items: stretch; gap: 2px;
+    background: rgba(10,22,40,0.97); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border); padding: 10px 16px 16px;
+    transform: translateY(-140%); transition: transform .25s ease; z-index: 99;
+  }
+  .nav-links.open{ transform: translateY(0); }
+  .nav-link{ text-align: left; }
+  .nav-toggle{
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04); color: var(--off); font-size: 16px; cursor: pointer;
+  }
+  .hero{ padding-top: 120px; }
+  .feature-grid{ grid-template-columns: 1fr; }
+  .clock-meta{ grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Help Chatbot (floating widget) ─────────────────────────── */
+.chatbot-fab{
+    position:fixed;
+    bottom:22px;
+    right:22px;
+    width:54px;
+    height:54px;
+    border-radius:50%;
+    background:linear-gradient(145deg,#4f7cff,#3660e0);
+    color:#fff;
+    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 10px 26px rgba(79,124,255,.4);
+    z-index:4000;
+    transition:transform .18s ease;
+}
+.chatbot-fab:hover{ transform:scale(1.06); }
+.chatbot-fab svg{ width:24px; height:24px; }
+
+.chatbot-panel{
+    position:fixed;
+    bottom:88px;
+    right:22px;
+    width:340px;
+    max-width:calc(100vw - 32px);
+    height:460px;
+    max-height:calc(100vh - 120px);
+    background:#0f1729;
+    border:1px solid rgba(148,163,184,.12);
+    border-radius:16px;
+    box-shadow:0 24px 60px rgba(0,0,0,.5);
+    display:none;
+    flex-direction:column;
+    overflow:hidden;
+    z-index:4000;
+    font-family:Inter,"Segoe UI",sans-serif;
+}
+.chatbot-panel.open{ display:flex; }
+
+.chatbot-header{
+    padding:14px 16px;
+    background:linear-gradient(135deg,#4f7cff,#3660e0);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+.chatbot-header-title{ font-size:13.5px; font-weight:700; }
+.chatbot-header-sub{ font-size:10.5px; opacity:.85; margin-top:2px; }
+.chatbot-close{
+    background:rgba(255,255,255,.15);
+    border:none;
+    color:#fff;
+    width:26px;
+    height:26px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.chatbot-close:hover{ background:rgba(255,255,255,.28); }
+
+.chatbot-messages{
+    flex:1;
+    overflow-y:auto;
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+.chatbot-messages::-webkit-scrollbar{ width:5px; }
+.chatbot-messages::-webkit-scrollbar-thumb{ background:#26304a; border-radius:10px; }
+
+.chatbot-msg{
+    max-width:82%;
+    padding:9px 12px;
+    border-radius:12px;
+    font-size:12.5px;
+    line-height:1.5;
+}
+.chatbot-msg.bot{
+    align-self:flex-start;
+    background:#182337;
+    color:#d7dee9;
+    border-bottom-left-radius:4px;
+}
+.chatbot-msg.user{
+    align-self:flex-end;
+    background:#4f7cff;
+    color:#fff;
+    border-bottom-right-radius:4px;
+}
+
+.chatbot-quick{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:0 14px 10px;
+}
+.chatbot-chip{
+    font-size:11px;
+    padding:6px 10px;
+    border-radius:20px;
+    background:rgba(79,124,255,.12);
+    color:#4f7cff;
+    border:1px solid rgba(79,124,255,.25);
+    cursor:pointer;
+    transition:background .15s;
+}
+.chatbot-chip:hover{ background:rgba(79,124,255,.22); }
+
+.chatbot-input-row{
+    display:flex;
+    gap:8px;
+    padding:12px;
+    border-top:1px solid rgba(148,163,184,.1);
+}
+.chatbot-input-row input{
+    flex:1;
+    padding:9px 12px;
+    border-radius:9px;
+    border:1px solid rgba(148,163,184,.15);
+    background:#182337;
+    color:#e7ebf2;
+    font-size:12.5px;
+    outline:none;
+}
+.chatbot-input-row input:focus{ border-color:#4f7cff; }
+.chatbot-input-row button{
+    background:#4f7cff;
+    border:none;
+    color:#fff;
+    width:36px;
+    border-radius:9px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.chatbot-input-row button:hover{ background:#3660e0; }
+
+@media (max-width:480px){
+    .chatbot-panel{ right:12px; bottom:82px; width:calc(100vw - 24px); }
+    .chatbot-fab{ right:16px; bottom:16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <div class="nav-mark"><img src="/static/images/logo.png" alt="Time Hub Network logo"></div>
+    <div class="nav-name">Time Hub <span>Network</span></div>
+  </div>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+  <div class="nav-links" id="navLinks">
+    <button class="nav-link" data-scroll="#home">Home</button>
+    <button class="nav-link" data-scroll="#about">About</button>
+    <button class="nav-link" data-scroll="#instructions">Instructions</button>
+    <select class="nav-language-select" data-language-select aria-label="Language" onchange="window.i18n && window.i18n.setLanguage(this.value)">
+      <option value="en">English</option>
+      <option value="ko">Korean</option>
+      <option value="tl">Tagalog</option>
+    </select>
+    <button class="nav-link cta" id="navLoginBtn">Login</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Live across 4 plants</div>
+      <h1>Time Hub Network<br><span class="hl">Attendance Monitoring System</span></h1>
+      <p class="hero-desc">
+        Every clock-in, shift change, and leave request, tracked the moment it happens.
+        Built for plant floors that don't stop moving.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="heroLoginBtn">Sign in to dashboard</button>
+        <button class="btn-secondary" data-scroll="#instructions">Read work instructions</button>
+      </div>
+    </div>
+
+    <!-- Signature element: live punch-clock -->
+    <div class="clock-card">
+      <div class="clock-label">
+        <span>CURRENT SITE TIME</span>
+        <span class="shift-status" id="shiftStatus"><span class="sdot"></span><span id="shiftText">—</span></span>
+      </div>
+      <div class="clock-time" id="clockTime">00:00:00</div>
+      <div class="clock-date" id="clockDate">—</div>
+      <div class="clock-divider"></div>
+      <div class="clock-meta">
+        <div class="meta-item"><div class="mnum">4</div><div class="mlbl">Plants online</div></div>
+        <div class="meta-item"><div class="mnum">2</div><div class="mlbl">Active shifts</div></div>
+        <div class="meta-item"><div class="mnum">Live</div><div class="mlbl">Sync status</div></div>
+        <div class="meta-item"><div class="mnum">4</div><div class="mlbl">Agencies</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-inner">
+    <div class="section-eyebrow">How it works</div>
+    <h2>From a single scan to a fully reconciled attendance record — automatically.</h2>
+    <p class="about-sub">
+      Time Hub Network replaces paper logs and spreadsheets with a single source of truth —
+      built to keep up with shift changes, not slow them down.
+    </p>
+
+    <div class="flow-grid">
+      <div class="flow-step">
+        <div class="flow-num" data-step="1"></div>
+        <h3>Scan In / Out</h3>
+        <p>Employees clock in at the scanner. Every punch is logged instantly with a timestamp, tied to their employee ID.</p>
+        <span class="feature-tag">Attendance Log</span>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" data-step="2"></div>
+        <h3>Roster Cross-Reference</h3>
+        <p>Each punch is matched against the employee roster by ID and shift, so name, position, and agency are always accurate.</p>
+        <span class="feature-tag">Auto-Match</span>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" data-step="3"></div>
+        <h3>Status Calculated</h3>
+        <p>Present, Late, Absent, On Leave, or Pending is worked out automatically from shift cutoff times — no manual tagging.</p>
+        <span class="feature-tag">Rules Engine</span>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" data-step="4"></div>
+        <h3>Live Dashboard</h3>
+        <p>Search, filter by shift, date, status, or position, and sort any column to see exactly who's on the floor right now.</p>
+        <span class="feature-tag">Live</span>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" data-step="5"></div>
+        <h3>Manual Override</h3>
+        <p>Admins can add or correct a time in/out for anyone — even someone who never scanned — with password-confirmed edits.</p>
+        <span class="feature-tag">Admin Only</span>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" data-step="6"></div>
+        <h3>Reports & History</h3>
+        <p>Missing-punch alerts, full per-employee attendance history, and audit trails on every manual change, always one click away.</p>
+        <span class="feature-tag">Audit Trail</span>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" data-step="7"></div>
+        <h3>Per-Employee Tally</h3>
+        <p>Every employee's history rolls up into a running count of Present, Late, Absent, No Time In, and No Time Out days, at a glance.</p>
+        <span class="feature-tag">Summary Stats</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- NEW USER WORK INSTRUCTIONS -->
+<section class="instructions" id="instructions">
+  <div class="instructions-inner">
+    <div class="instructions-head">
+      <div>
+        <div class="section-eyebrow">New user guide</div>
+        <h2>Start with the right screen, then let the system do the tracking.</h2>
+      </div>
+      <p>Use this quick guide when you are new to Time Hub Network or need to know which feature to use for an attendance task.</p>
+    </div>
+
+    <div class="instructions-layout">
+      <div class="instruction-list">
+        <article class="instruction-item"><div class="instruction-step">01</div><div><h3>Sign in using your assigned account</h3><p>Your account permissions control what you can view, edit, approve, and export. Contact your administrator if your department, line, or shift access is incorrect.</p></div></article>
+        <article class="instruction-item"><div class="instruction-step">02</div><div><h3>Review the Dashboard</h3><p>Check the live attendance summary for Present, Late, Absent, On Leave, and No Work employees. Use the shift filter before reviewing a specific line.</p></div></article>
+        <article class="instruction-item"><div class="instruction-step">03</div><div><h3>Use Attendance Logs for daily checks</h3><p>Select the date and shift, then search by employee name or ID. Click an employee name to view attendance history. Use the Edit button only when a Time In or Time Out correction is needed.</p></div></article>
+        <article class="instruction-item"><div class="instruction-step">04</div><div><h3>Submit a correction request with complete details</h3><p>Enter the correct time, select the appropriate status, and add a clear reason in Remarks. The request stays pending until it completes first approval and final HR approval.</p></div></article>
+        <article class="instruction-item"><div class="instruction-step">05</div><div><h3>Review and approve requests when assigned</h3><p>Supervisors review requests within their allowed scope. Administration/HR completes final approval. Approved corrections update the attendance record; declined requests leave the original record unchanged.</p></div></article>
+        <article class="instruction-item"><div class="instruction-step">06</div><div><h3>Export and monitor exceptions</h3><p>Use Missing Punches to find incomplete Time In/Time Out records, select a custom date range, then export to Excel. Attendance Logs also supports filtered daily and date-range exports.</p></div></article>
+      </div>
+
+      <aside class="role-guide">
+        <h3>What each role can do</h3>
+        <p>Access is also limited by the department, section, line, and shift assigned to the account.</p>
+        <div class="role-row-guide"><strong>Line Leader</strong><span>View dashboards, attendance logs, reports, and permitted request status. No edits or approvals.</span></div>
+        <div class="role-row-guide"><strong>Staff</strong><span>Submit corrections and perform first approval for attendance requests in the assigned scope.</span></div>
+        <div class="role-row-guide"><strong>Supervisor</strong><span>View all attendance per department and checks the approval of the staffs.</span></div>
+        <div class="role-row-guide"><strong>Admin/HR</strong><span>Review final requests, apply approved corrections, and access company-wide functions based on account permissions.</span></div>
+      </aside>
+    </div>
+
+    <div class="instruction-note"><strong>Good practice:</strong> Check the selected date and shift before submitting or approving a correction. This keeps the audit trail accurate and prevents changes to the wrong attendance record.</div>
+  </div>
+</section>
+
+<footer class="footer">© 2026 Time Hub Network. All rights reserved.</footer>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal" aria-hidden="true">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+
+    <!-- LOGIN PANEL -->
+    <div class="modal-panel active" id="panel-login">
+      <h2 id="loginTitle">Welcome back</h2>
+      <p class="modal-sub">Sign in to your Time Hub Network account. Accounts are created by your administrator.</p>
+      <div class="alert" id="login-alert"></div>
+
+      <div class="mfield">
+        <label for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" placeholder="Enter your username" autocomplete="username">
+      </div>
+      <div class="mfield">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+      <div class="mfield-remember">
+        <input type="checkbox" id="rememberMe">
+        <label for="rememberMe">Remember me</label>
+      </div>
+      <button class="modal-submit" id="login-btn" onclick="handleLogin()">Sign In</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- HELP CHATBOT (floating widget, outside the modal so it's always visible) -->
+<button class="chatbot-fab" id="chatbotFab" aria-label="Open help chat" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+</button>
+
+<div class="chatbot-panel" id="chatbotPanel">
+    <div class="chatbot-header">
+        <div>
+            <div class="chatbot-header-title">Time Hub Assistant</div>
+            <div class="chatbot-header-sub">Ask me how to use the system</div>
+        </div>
+        <button class="chatbot-close" id="chatbotClose" aria-label="Close" type="button">&times;</button>
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages"></div>
+    <div class="chatbot-quick" id="chatbotQuick"></div>
+    <div class="chatbot-input-row">
+        <input type="text" id="chatbotInput" placeholder="Type your question…" autocomplete="off">
+        <button id="chatbotSend" aria-label="Send" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+    </div>
+</div>
+
+<script>
+// ── SMOOTH SCROLL NAV ─────────────────────────────
+document.querySelectorAll('[data-scroll]').forEach(el => {
+  el.addEventListener('click', () => {
+    const target = document.querySelector(el.dataset.scroll);
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+    closeMobileNav();
+  });
+});
+
+// ── MOBILE NAV TOGGLE ─────────────────────────────
+const navToggle = document.getElementById('navToggle');
+const navLinks = document.getElementById('navLinks');
+navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+function closeMobileNav(){ navLinks.classList.remove('open'); }
+
+// ── LOGIN MODAL OPEN/CLOSE ────────────────────────
+const loginModal = document.getElementById('loginModal');
+const modalClose = document.getElementById('modalClose');
+
+let lastFocusedEl = null;
+
+function openLoginModal(){
+  if (loginModal.classList.contains('open')) return;
+  lastFocusedEl = document.activeElement;
+  closeMobileNav();
+  document.body.classList.add('modal-open');
+  loginModal.classList.add('open');
+  loginModal.setAttribute('aria-hidden', 'false');
+  setTimeout(() => document.getElementById('loginUsername').focus({ preventScroll: true }), 50);
+}
+
+function closeLoginModal(){
+  if (!loginModal.classList.contains('open')) return;
+  loginModal.classList.remove('open');
+  loginModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  if (lastFocusedEl && lastFocusedEl.focus) lastFocusedEl.focus({ preventScroll: true });
+}
+
+document.getElementById('navLoginBtn').addEventListener('click', openLoginModal);
+document.getElementById('heroLoginBtn').addEventListener('click', openLoginModal);
+modalClose.addEventListener('click', closeLoginModal);
+
+// Only close when the press AND the release both happen on the dark overlay.
+// Otherwise, dragging (e.g. selecting text in an input) and releasing the mouse
+// outside the box counts as a "click" on the overlay and closes the modal.
+let pressStartedOnOverlay = false;
+loginModal.addEventListener('pointerdown', (e) => { pressStartedOnOverlay = (e.target === loginModal); });
+loginModal.addEventListener('click', (e) => {
+  if (e.target === loginModal && pressStartedOnOverlay) closeLoginModal();
+  pressStartedOnOverlay = false;
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!loginModal.classList.contains('open')) return;
+  if (e.key === 'Escape'){ closeLoginModal(); return; }
+
+  // keep Tab focus inside the modal
+  if (e.key === 'Tab'){
+    const items = loginModal.querySelectorAll('button:not([disabled]), input, select, a[href]');
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+});
+
+function clearAlerts(){
+  const el = document.getElementById('login-alert');
+  el.style.display = 'none';
+  el.className = 'alert';
+  el.innerText = '';
+}
+
+function showAlert(id, msg, type){
+  const el = document.getElementById(id);
+  el.innerText = msg;
+  el.className = `alert ${type}`;
+  el.style.display = 'block';
+}
+
+// ── LOGIN (wired to real /login endpoint) ─────────
+async function handleLogin(){
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn      = document.getElementById('login-btn');
+
+  if (btn.disabled) return;   // already signing in
+
+  if (!username || !password){
+    showAlert('login-alert', 'Please enter your username and password.', 'error');
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerText = 'Signing in…';
+
+  try {
+    const res  = await fetch('/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (data.success){
+      showAlert('login-alert', 'Login successful. Redirecting…', 'success');
+      setTimeout(() => { window.location.href = '/maindashboard'; }, 1000);
+    } else {
+      showAlert('login-alert', data.message || 'Login failed.', 'error');
+      btn.disabled  = false;
+      btn.innerText = 'Sign In';
+    }
+  } catch (e){
+    showAlert('login-alert', 'Network error. Please try again.', 'error');
+    btn.disabled  = false;
+    btn.innerText = 'Sign In';
+  }
+}
+
+// ── ENTER KEY SUBMIT ───────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing) return;
+  if (!loginModal.classList.contains('open')) return;
+  if (e.target.closest('button')) return;   // buttons already fire their own click
+  e.preventDefault();
+  handleLogin();
+});
+
+// ── LIVE SHIFT CLOCK (signature element) ──────────
+function updateClock(){
+  const now = new Date();
+  const h = now.getHours();
+  const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  document.getElementById('clockTime').textContent = timeStr;
+  document.getElementById('clockDate').textContent = dateStr;
+
+  const isDay = h >= 6 && h < 18;
+  const statusEl = document.getElementById('shiftStatus');
+  const textEl = document.getElementById('shiftText');
+  statusEl.className = 'shift-status ' + (isDay ? 'day' : 'night');
+  textEl.textContent = isDay ? 'Day Shift Active' : 'Night Shift Active';
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+<script defer src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+</html>

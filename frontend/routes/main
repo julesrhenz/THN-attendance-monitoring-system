@@ -1,0 +1,506 @@
+from flask import Flask, jsonify, request
+import sys
+import os
+from db.database import get_db_connection
+import traceback
+import json
+from datetime import datetime
+
+app = Flask(__name__)
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, BASE_DIR)
+
+@app.route("/employees")
+def employees():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                emp_no,
+                emp,
+                emp_id,
+                last_name,
+                first_name,
+                shift_name,
+                position,
+                department
+            FROM employees
+            ORDER BY emp_id
+        """)
+        rows = cur.fetchall()
+        return jsonify([
+            {
+                "emp_no": r[0], "emp":   r[1],
+                "emp_id": r[2], "last_name":   r[3],
+                "first_name":  r[4], "shift_name": r[5], "position": r[6],
+                "department":  r[7],
+            }
+            for r in rows
+        ])
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route("/agencies")
+def agencies():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT emp, agency_code FROM agencies")
+        rows = cur.fetchall()
+        return jsonify([{"agency_id": r[0], "agency_code": r[1]} for r in rows])
+    finally:
+        if conn:
+            conn.close()
+
+@app.route("/scanners")
+def scanners():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT scanner_id, emp, ip_address, location, created_at
+            FROM scanners
+        """)
+        rows = cur.fetchall()
+        return jsonify([
+            {
+                "scanner_id": r[0], "agency_id":  r[1],
+                "ip_address": r[2], "location":   r[3],
+                "created_at": r[4],
+            }
+            for r in rows
+        ])
+    finally:
+        if conn:
+            conn.close()
+
+@app.route("/attendance/biometric_logs")
+def biometric_logs():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                b.scanner_id,
+                b.emp_id,
+                e.last_name,
+                e.first_name,
+                b.punch_time,
+                b.punch_type,
+                b.processed,
+                b.created_at
+            FROM biometric_logs b
+            LEFT JOIN employees e ON b.emp_id = e.emp_id
+            ORDER BY b.punch_time DESC
+        """)
+        rows = cur.fetchall()
+        return jsonify([
+            {
+                "scanner_id":  r[0], "emp_id": r[1],
+                "last_name":   r[2], "first_name":  r[3],
+                "punch_time":  r[4], "punch_type":  r[5],
+                "processed":   r[6], "created_at":  r[7],
+            }
+            for r in rows
+        ])
+    finally:
+        if conn:
+            conn.close()
+
+@app.route("/attendance/attendance-logs", methods=["GET"])
+def get_attendance_logs():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                emp_id, emp, emp_no, full_name, emp_status,
+                attendance_date, time_in, time_in_status, time_in_location,
+                time_out, time_out_status, time_out_location, shift_name
+            FROM attendance_logs
+            ORDER BY attendance_date DESC, full_name
+        """)
+        rows = cur.fetchall()
+        data = [
+            {
+                "emp_id":             row[0],
+                "emp":                row[1],
+                "emp_no":             row[2],
+                "full_name":          row[3],
+                "emp_status":         row[4],
+                "attendance_date":    str(row[5])  if row[5]  else None,
+                "time_in":            str(row[6])  if row[6]  else None,
+                "time_in_status":     row[7],
+                "time_in_location":   row[8],
+                "time_out":           str(row[9])  if row[9]  else None,
+                "time_out_status":    row[10],
+                "time_out_location":  row[11],
+                "shift_name":         row[12],
+            }
+            for row in rows
+        ]
+        return jsonify({"success": True, "count": len(data), "data": data})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+# =========================================================
+# MANUAL OVERRIDE — attendance_logs
+# =========================================================
+# Editable fields the frontend is allowed to change.
+# Any field not in this set is silently ignored.
+EDITABLE_FIELDS = {
+    "time_in",
+    "time_in_status",
+    "time_in_location",
+    "time_out",
+    "time_out_status",
+    "time_out_location",
+    "shift_name",
+    "emp_status",
+}
+
+@app.route("/attendance/attendance-logs/override", methods=["PUT"])
+def override_attendance_log():
+    """
+    Manually update one attendance_logs row.
+
+    Expected JSON body:
+    {
+        "emp_id":          "THN-1222",          -- required, identifies the row
+        "attendance_date": "2026-06-27",         -- required, identifies the row
+        "changed_by":      "admin_username",     -- required, stored in audit
+        "changes": {                             -- at least one field required
+            "time_in":         "07:55:00",
+            "time_in_status":  "On Time",
+            "time_out":        "17:10:00",
+            "time_out_status": "On Time",
+            "shift_name":      "Day Shift",
+            "emp_status":      "ACTIVE"
+        }
+    }
+
+    On success:
+    - attendance_logs row is updated with new values
+    - employee_record_audit row is inserted with old + new data as JSONB
+    """
+    conn = None
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+
+        emp_id          = str(body.get("emp_id",          "")).strip()
+        attendance_date = str(body.get("attendance_date", "")).strip()
+        changed_by      = str(body.get("changed_by",      "system")).strip()
+        changes         = body.get("changes", {})
+
+        # ── Validate ───────────────────────────────────────────────────────
+        if not emp_id or not attendance_date:
+            return jsonify({
+                "success": False,
+                "message": "emp_id and attendance_date are required."
+            }), 400
+
+        if not changes:
+            return jsonify({
+                "success": False,
+                "message": "No changes provided."
+            }), 400
+
+        # Filter to only allowed editable fields
+        safe_changes = {k: v for k, v in changes.items() if k in EDITABLE_FIELDS}
+
+        if not safe_changes:
+            return jsonify({
+                "success": False,
+                "message": f"None of the provided fields are editable. Allowed: {sorted(EDITABLE_FIELDS)}"
+            }), 400
+
+        conn = get_db_connection()
+        cur  = conn.cursor()
+
+        # ── Fetch current row ──────────────────────────────────────────────
+        cur.execute("""
+            SELECT
+                emp_id, emp_no, emp_status,
+                attendance_date,
+                time_in, time_in_status, time_in_location,
+                time_out, time_out_status, time_out_location,
+                shift_name
+            FROM attendance_logs
+            WHERE emp_id = %s AND attendance_date = %s
+        """, (emp_id, attendance_date))
+
+        existing = cur.fetchone()
+
+        if not existing:
+            return jsonify({
+                "success": False,
+                "message": f"No attendance record found for emp_id={emp_id} on {attendance_date}."
+            }), 404
+
+        # Build old_data snapshot from current row
+        old_data = {
+            "emp_id":             existing[0],
+            "emp_no":             existing[1],
+            "emp_status":         existing[2],
+            "attendance_date":    str(existing[3]) if existing[3] else None,
+            "time_in":            str(existing[4]) if existing[4] else None,
+            "time_in_status":     existing[5],
+            "time_in_location":   existing[6],
+            "time_out":           str(existing[7]) if existing[7] else None,
+            "time_out_status":    existing[8],
+            "time_out_location":  existing[9],
+            "shift_name":         existing[10],
+        }
+
+        # Build new_data — old values overwritten by what's changing
+        new_data = {**old_data, **safe_changes}
+
+        # ── Build UPDATE statement dynamically ─────────────────────────────
+        set_clauses = ", ".join(f"{col} = %s" for col in safe_changes)
+        set_values  = list(safe_changes.values())
+
+        cur.execute(
+            f"""
+            UPDATE attendance_logs
+            SET {set_clauses}
+            WHERE emp_id = %s AND attendance_date = %s
+            """,
+            set_values + [emp_id, attendance_date],
+        )
+
+        # ── Write audit record ─────────────────────────────────────────────
+        cur.execute("""
+            INSERT INTO employee_record_audit
+                (emp_id, emp_no, action_type, changed_by, old_data, new_data, changed_at)
+            VALUES
+                (%s, %s, 'UPDATE', %s, %s, %s, NOW())
+        """, (
+            emp_id,
+            existing[1],      # emp_no
+            changed_by,
+            json.dumps(old_data),
+            json.dumps(new_data),
+        ))
+
+        conn.commit()
+
+        return jsonify({
+            "success":     True,
+            "message":     f"Attendance record for {emp_id} on {attendance_date} updated.",
+            "fields_updated": list(safe_changes.keys()),
+            "old_data":    old_data,
+            "new_data":    new_data,
+        })
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+# =========================================================
+# AUDIT LOG — retrieve history for one employee
+# =========================================================
+@app.route("/attendance/audit/<emp_id>", methods=["GET"])
+def get_audit_log(emp_id: str):
+    """
+    Return all manual-override audit entries for a given emp_id,
+    newest first.
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute("""
+            SELECT
+                audit_id,
+                emp_id,
+                emp_no,
+                action_type,
+                changed_by,
+                old_data,
+                new_data,
+                changed_at
+            FROM employee_record_audit
+            WHERE emp_id = %s
+            ORDER BY changed_at DESC
+        """, (emp_id,))
+
+        rows = cur.fetchall()
+
+        return jsonify([
+            {
+                "audit_id":    row[0],
+                "emp_id":      row[1],
+                "emp_no":      row[2],
+                "action_type": row[3],
+                "changed_by":  row[4],
+                "old_data":    row[5],
+                "new_data":    row[6],
+                "changed_at":  str(row[7]),
+            }
+            for row in rows
+        ])
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
+
+# =========================================================
+# MOVEMENTS
+# =========================================================
+@app.route("/api/movements-summary", methods=["GET"])
+def get_movements_summary():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+
+        cur.execute("""
+            SELECT id, filename, imported_at
+            FROM frontend.import_batches
+            ORDER BY id DESC LIMIT 1
+        """)
+        latest = cur.fetchone()
+
+        if not latest:
+            return jsonify({"batch": None, "movements": []})
+
+        batch_id = latest[0]
+
+        cur.execute("""
+            SELECT emp_id, full_name, field_name, old_value, new_value, detected_at
+            FROM frontend.employee_movements
+            WHERE to_batch_id = %s
+            ORDER BY full_name
+        """, (batch_id,))
+
+        rows = cur.fetchall()
+
+        return jsonify({
+            "batch": {
+                "id":          latest[0],
+                "filename":    latest[1],
+                "imported_at": str(latest[2]),
+            },
+            "movements": [
+                {
+                    "emp_id":      row[0],
+                    "full_name":   row[1],
+                    "field_name":  row[2],
+                    "old_value":   row[3],
+                    "new_value":   row[4],
+                    "detected_at": str(row[5]),
+                }
+                for row in rows
+            ],
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route("/api/employee-movements/<emp_id>", methods=["GET"])
+def get_employee_movements(emp_id: str):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+
+        cur.execute("""
+            SELECT
+                m.field_name,
+                m.old_value,
+                m.new_value,
+                b_from.filename,
+                b_from.imported_at,
+                b_to.filename,
+                b_to.imported_at,
+                m.detected_at
+            FROM frontend.employee_movements m
+            LEFT JOIN frontend.import_batches b_from ON b_from.id = m.from_batch_id
+            LEFT JOIN frontend.import_batches b_to   ON b_to.id   = m.to_batch_id
+            WHERE m.emp_id = %s
+            ORDER BY m.detected_at DESC
+        """, (emp_id,))
+
+        rows = cur.fetchall()
+
+        return jsonify([
+            {
+                "field_name": row[0],
+                "old_value":  row[1],
+                "new_value":  row[2],
+                "from_file":  row[3],
+                "from_date":  str(row[4]) if row[4] else None,
+                "to_file":    row[5],
+                "to_date":    str(row[6]) if row[6] else None,
+                "detected_at": str(row[7]),
+            }
+            for row in rows
+        ])
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+# =========================================================
+# USERS
+# =========================================================
+@app.route("/api/users", methods=["GET"])
+def get_users():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute("""
+            SELECT username, first_name, last_name, roles
+            FROM frontend.users
+            ORDER BY first_name
+        """)
+        rows = cur.fetchall()
+        return jsonify([
+            {
+                "username":   row[0],
+                "first_name": row[1],
+                "last_name":  row[2],
+                "roles":      row[3],
+            }
+            for row in rows
+        ])
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

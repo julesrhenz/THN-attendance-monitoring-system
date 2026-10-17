@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try { if (localStorage.getItem("thn_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch(e){}</script>
+  <title>Scanner Management</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <style>
+    :root{--bg:#f4f6f9;--card:#fff;--text:#172033;--muted:#667085;--line:#e6eaf0;--accent:#2563eb;--danger:#b42318;--success:#087443}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px "Segoe UI",Arial,sans-serif}.main-content{padding:30px;min-height:100vh}.page-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}.eyebrow{margin:0 0 6px;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.page-head h1{margin:0;font-size:25px}.page-head p{margin:8px 0 0;color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:22px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px #1018280a}.form-card{padding:22px}.form-card h2,.table-title h2{margin:0;font-size:17px}.form-card>p{color:var(--muted);line-height:1.45;margin:8px 0 20px}.field{margin:0 0 15px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#344054}.field input,.field select{width:100%;min-height:39px;border:1px solid #d0d5dd;border-radius:8px;padding:8px 10px;background:white;font:inherit}.field input:focus,.field select:focus{outline:3px solid #dbeafe;border-color:var(--accent)}.field input[readonly]{background:#f8fafc;color:var(--muted);font-weight:700}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.check{display:flex;gap:8px;align-items:center;color:#344054;margin:4px 0 18px}.check input{width:16px;height:16px}.button-row{display:flex;gap:10px}.btn{border:0;border-radius:8px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}.btn-primary{flex:1;color:white;background:var(--accent)}.btn-secondary{color:#344054;background:#eef2f6}.btn-primary:disabled{opacity:.6;cursor:wait}.table-card{overflow:hidden}.table-title{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:20px 20px 14px}.table-title p{margin:4px 0 0;color:var(--muted);font-size:12px}.table-wrap{overflow:auto;border-top:1px solid var(--line)}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}th{background:#f9fafb;font-size:11px;color:#475467;text-transform:uppercase;letter-spacing:.04em}td{font-size:13px}.badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#ecfdf3;color:var(--success);font-size:11px;font-weight:800}.badge.off{background:#fef3f2;color:var(--danger)}.row-actions{display:flex;gap:7px}.action-btn{border:0;border-radius:6px;padding:6px 9px;background:#e8f0ff;color:#1d4ed8;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.action-btn.delete{background:#fef0f0;color:var(--danger)}#notice{min-height:18px;margin-top:12px;font-weight:600;font-size:12px}#notice.error{color:var(--danger)}#notice.success{color:var(--success)}.empty{text-align:center;color:var(--muted);padding:34px}@media(max-width:900px){.layout{grid-template-columns:1fr}.main-content{padding:20px}}@media(max-width:480px){.main-content{padding:74px 14px 20px}.page-head{display:block}.field-row{grid-template-columns:1fr}}
+    .lock-btn{border:1px solid var(--line);border-radius:8px;padding:9px 14px;background:white;color:#344054;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+    .lock-btn:hover{background:#f9fafb}
+    #accessOverlay{position:fixed;inset:0;background:#0f172acc;display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+    #accessOverlay[hidden]{display:none}
+    .access-card{background:var(--card);border-radius:14px;padding:28px;width:100%;max-width:360px;box-shadow:0 20px 40px #0003}
+    .access-card h2{margin:0 0 6px;font-size:18px}
+    .access-card p{margin:0 0 18px;color:var(--muted);line-height:1.45}
+    .access-card .field{margin-bottom:14px}
+    #accessNotice{min-height:18px;margin-top:10px;font-weight:600;font-size:12px;color:var(--danger)}
+    .main-content[data-locked="true"] .layout{filter:blur(2px);pointer-events:none;user-select:none}
+  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui-refresh.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=7">
+  <script defer src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
+</head>
+<body>
+{% include 'sidebar.html' %}
+<main class="main-content">
+  <header class="page-head">
+    <div><p class="eyebrow">System Setup</p><h1>Scanner Management</h1><p>Add agency scanners and their connection details. The sync worker automatically includes enabled devices.</p></div>
+    <button class="lock-btn" id="lockTab" type="button" hidden>Lock tab</button>
+  </header>
+  <div class="layout">
+    <section class="card form-card">
+      <h2 id="formTitle">Add scanner</h2>
+      <p id="formDescription">The scanner ID is assigned by the database. It is shown here only as a preview.</p>
+      <form id="scannerForm">
+        <div class="field"><label for="scannerId">Scanner ID</label><input id="scannerId" readonly aria-describedby="scannerIdHint"><small id="scannerIdHint">Assigned when this scanner is saved.</small></div>
+        <div class="field"><label for="scannerAgency">Agency</label><select id="scannerAgency" required><option value="">Select an agency</option></select></div>
+        <div class="field"><label for="scannerIp">IP address</label><input id="scannerIp" inputmode="decimal" placeholder="e.g. 192.9.224.25" required></div>
+        <div class="field"><label for="scannerLocation">Location</label><input id="scannerLocation" maxlength="100" placeholder="e.g. Plant 1 Lobby"></div>
+        <div class="field-row"><div class="field"><label for="scannerType">Scanner type</label><select id="scannerType" required><option value="ZKTeco">ZKTeco</option><option value="Anviz">Anviz</option></select></div><div class="field"><label for="scannerPort">Port</label><input id="scannerPort" type="number" min="1" max="65535" placeholder="4370 / 5010"></div></div>
+        <label class="check"><input id="scannerEnabled" type="checkbox" checked> Enable this scanner immediately</label>
+        <div class="button-row"><button class="btn btn-primary" id="saveScanner" type="submit">Add Scanner</button><button class="btn btn-secondary" id="cancelEdit" type="button" hidden>Cancel</button></div><div id="notice" role="status"></div>
+      </form>
+    </section>
+    <section class="card table-card"><div class="table-title"><div><h2>Registered scanners</h2><p>Scanner records currently stored in <code>backend.scanners</code>.</p></div></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Agency ID</th><th>Agency</th><th>IP address</th><th>Location</th><th>Port</th><th>Type</th><th>Created</th><th>Status</th><th>Actions</th></tr></thead><tbody id="scannerTable"></tbody></table></div></section>
+  </div>
+</main>
+
+<div id="accessOverlay">
+  <form class="access-card" id="accessForm">
+    <h2>Scanner access locked</h2>
+    <p>This tab holds live scanner connection details. Enter the scanner access password to continue.</p>
+    <div class="field"><label for="accessPassword">Access password</label><input id="accessPassword" type="password" autocomplete="off" required></div>
+    <button class="btn btn-primary" id="accessSubmit" type="submit" style="width:100%">Unlock</button>
+    <div id="accessNotice" role="status"></div>
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/scanner_management.js') }}"></script>
+</body>
+</html>
